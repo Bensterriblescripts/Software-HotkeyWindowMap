@@ -48,7 +48,7 @@ pub unsafe extern "system" fn enum_windows_callback(hwnd: HWND, lparam: LPARAM) 
 
 pub fn find_window_by_title(title: &str) -> Result<HWND, Box<dyn Error>> {
 
-    // Try the direct approach first
+    // Try finding it directly
     let title_wide: Vec<u16> = title.encode_utf16().chain(std::iter::once(0)).collect();
     
     unsafe {
@@ -60,7 +60,6 @@ pub fn find_window_by_title(title: &str) -> Result<HWND, Box<dyn Error>> {
     
     // If that fails, try enumeration
     let mut search_data = (title.to_string(), None);
-    
     unsafe {
         EnumWindows(
             Some(enum_windows_callback),

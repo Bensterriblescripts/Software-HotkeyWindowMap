@@ -30,35 +30,13 @@ impl App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Keybinds");
-            ui.add_space(10.0);
-
-            // Active Window List
-            if ui.add_sized([150.0, 25.0], egui::Button::new("Refresh List")).clicked() {
-                if std::env::consts::OS == "windows" {
-                    if let Ok(applications) = windows::list_visible_windows() {
-                        self.applications = applications.iter()
-                            .filter_map(|(_, title)| {
-                                if title.trim().is_empty() {
-                                    None
-                                }
-                                else if title == "Workstation Hotkey Manager" {
-                                    None
-                                }
-                                else {
-                                    Some(title.clone())
-                                }
-                            })
-                            .collect();
-                    }
-                }
-            }
 
             ui.add_space(20.0);
-
-            // Two-column layout
             ui.columns(2, |columns| {
-                // Left column - original list
+                columns[0].heading("Active Windows");
+                columns[0].add_space(10.0);
+
+                /* Left Column */
                 columns[0].label("Application");
                 egui::ScrollArea::vertical().id_salt("active_windows").show(&mut columns[0], |ui| {
                     for window in &self.applications {
@@ -78,13 +56,39 @@ impl eframe::App for App {
                                 if let Err(e) = windows::make_focus(window) {
                                     println!("Failed to make {} the active window. Error: {}", window, e);
                                 }
-                                self.selected_application = Some(window.clone());
+                                self.selected_application = Some(window.to_string());
                             }
                         }
                     }
                 });
 
-                // Right column - duplicate list with right alignment
+                /* Right column */
+
+                // Refresh Button
+                if columns[1].add_sized([20.0, 20.0], egui::Button::new("Refresh")).clicked() {
+                    if std::env::consts::OS == "windows" {
+                        match windows::list_visible_windows() {
+                            Ok(applications) => {
+                                self.applications = applications.iter()
+                                    .filter_map(|(_, title)| {
+                                        if title.trim().is_empty() {
+                                            None
+                                        }
+                                        else {
+                                            Some(title.clone())
+                                        }
+                                    }).collect();
+                            }
+                            Err(e) => {
+                                println!("Failed to refresh active windows. Error: {}", e);
+                            }
+                        }
+                    }
+                }
+
+                columns[1].add_space(10.0);
+
+                // Keybinds
                 columns[1].label("Keybind");
                 egui::ScrollArea::vertical().id_salt("active_keybinds").show(&mut columns[1], |ui| {
                 });
