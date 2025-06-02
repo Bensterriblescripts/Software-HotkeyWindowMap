@@ -123,6 +123,10 @@ unsafe extern "system" fn enum_windows_callback_list(hwnd: HWND, lparam: LPARAM)
         else if title == "Task Manager" {
             return 1;
         }
+        else if title == "Windows Shell Experience Host" {
+            return 1;
+        }
+        
 
         println!("{}", title);
 
