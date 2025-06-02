@@ -17,17 +17,15 @@ impl App {
             keybinds: Vec::new(),
         };
 
+        // Preload Application List
         if std::env::consts::OS == "windows" {
             if let Ok(applications) = windows::list_visible_windows() {
                 app.applications = applications.iter().map(|(_, title)| title.clone()).collect();
             }
         }
 
-        unsafe {
-            app.keybinds = vec![
-                ["main.rs - hotkeymapper - Cursor", "cursor.exe", "Ctrl", "U"],
-            ];
-        }
+        // Keybinds
+        app.keybinds.push(["main.rs - hotkeymapper - Visual Studio Code", "cursor.exe", "", "U"]);
 
         app
     }   
@@ -39,9 +37,10 @@ impl eframe::App for App {
             ui.add_space(20.0);
             ui.columns(2, |columns| {
 
-                /* Headings */
                 columns[0].heading("Active Windows");
-                egui::Frame::new().show(&mut columns[0], |ui| {
+
+                // Refresh Button
+                egui::Frame::new().show(&mut columns[1], |ui| {
                     if ui.add_sized([100.0, 20.0], egui::Button::new("Refresh")).clicked() {
                         if std::env::consts::OS == "windows" {
                             match windows::list_visible_windows() {
@@ -63,10 +62,11 @@ impl eframe::App for App {
                         }
                     }
                 });
-                columns[0].add_space(10.0);
+
+                columns[0].add_space(20.0);
                 columns[0].label("Application");
                 
-                columns[1].add_space(70.0);
+                columns[1].add_space(20.0);
                 columns[1].label("Keybind");
 
                 /* Left Column */
@@ -101,8 +101,13 @@ impl eframe::App for App {
                     // List of Associated Keybinds
                     for application in &self.applications {
                         if let Some(keybind) = self.keybinds.iter().find(|keybind| keybind[0] == application) {
-                            if let Some(key) = keybind.iter().find(|key| *key == application) {
-                                ui.add_sized([20.0, 20.0], egui::Button::new(keybind[2].to_string() + " + " + keybind[3]).fill(egui::Color32::TRANSPARENT));
+                            if let Some(_key) = keybind.iter().find(|key| *key == application) {
+                                if keybind[2].is_empty() {
+                                    ui.add_sized([20.0, 20.0], egui::Button::new(keybind[3]).fill(egui::Color32::TRANSPARENT));
+                                }
+                                else {
+                                    ui.add_sized([20.0, 20.0], egui::Button::new(keybind[2].to_string() + " + " + keybind[3]).fill(egui::Color32::TRANSPARENT));
+                                }
                             }
                             else {
                                 ui.add_sized([20.0, 20.0], egui::Button::new("~").fill(egui::Color32::TRANSPARENT));
@@ -122,7 +127,7 @@ impl eframe::App for App {
 fn main() -> Result<(), Box<dyn Error>> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([1300.0, 600.0]),
+            .with_inner_size([1600.0, 600.0]),
         ..Default::default()
     };
     let _ = eframe::run_native(
