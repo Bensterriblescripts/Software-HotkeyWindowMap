@@ -1,12 +1,11 @@
 mod windows;
 use std::error::Error;
 use eframe::egui;
-use eframe::egui::style::Visuals;
 
 struct App {
     applications: Vec<String>,
     selected_application: Option<String>,
-    keybinds: Vec<[String; 4]>, // [Application, Exe+Arguments, Modifier, Key]
+    keybinds: Vec<[&'static str; 4]>, // [ApplicationName, ExecutablePath+Arguments, Modifier, Key]
 }
 
 // Initialise State
@@ -24,6 +23,12 @@ impl App {
             }
         }
 
+        unsafe {
+            app.keybinds = vec![
+                ["main.rs - hotkeymapper - Cursor", "cursor.exe", "Ctrl", "U"],
+            ];
+        }
+
         app
     }   
 }
@@ -33,12 +38,41 @@ impl eframe::App for App {
 
             ui.add_space(20.0);
             ui.columns(2, |columns| {
+
+                /* Headings */
                 columns[0].heading("Active Windows");
+                egui::Frame::new().show(&mut columns[0], |ui| {
+                    if ui.add_sized([100.0, 20.0], egui::Button::new("Refresh")).clicked() {
+                        if std::env::consts::OS == "windows" {
+                            match windows::list_visible_windows() {
+                                Ok(applications) => {
+                                    self.applications = applications.iter()
+                                        .filter_map(|(_, title)| {
+                                            if title.trim().is_empty() {
+                                                None
+                                            }
+                                            else {
+                                                Some(title.clone())
+                                            }
+                                        }).collect();
+                                }
+                                Err(e) => {
+                                    println!("Failed to refresh active windows. Error: {}", e);
+                                }
+                            }
+                        }
+                    }
+                });
                 columns[0].add_space(10.0);
+                columns[0].label("Application");
+                
+                columns[1].add_space(70.0);
+                columns[1].label("Keybind");
 
                 /* Left Column */
-                columns[0].label("Application");
                 egui::ScrollArea::vertical().id_salt("active_windows").show(&mut columns[0], |ui| {
+
+                    // List of Active Windows
                     for window in &self.applications {
                         let is_selected = self.selected_application.as_ref() == Some(window);
                         let button = egui::Button::new(window)
@@ -50,8 +84,7 @@ impl eframe::App for App {
                                     egui::Color32::TRANSPARENT
                                 }
                             );
-                        
-                        if ui.add(button).clicked() {
+                        if ui.add_sized([20.0, 20.0], button).clicked() {
                             if std::env::consts::OS == "windows" {
                                 if let Err(e) = windows::make_focus(window) {
                                     println!("Failed to make {} the active window. Error: {}", window, e);
@@ -62,35 +95,23 @@ impl eframe::App for App {
                     }
                 });
 
-                /* Right column */
+                /* Right Column */
+                egui::ScrollArea::vertical().id_salt("active_keybinds").show(&mut columns[1], |ui| {
 
-                // Refresh Button
-                if columns[1].add_sized([20.0, 20.0], egui::Button::new("Refresh")).clicked() {
-                    if std::env::consts::OS == "windows" {
-                        match windows::list_visible_windows() {
-                            Ok(applications) => {
-                                self.applications = applications.iter()
-                                    .filter_map(|(_, title)| {
-                                        if title.trim().is_empty() {
-                                            None
-                                        }
-                                        else {
-                                            Some(title.clone())
-                                        }
-                                    }).collect();
+                    // List of Associated Keybinds
+                    for application in &self.applications {
+                        if let Some(keybind) = self.keybinds.iter().find(|keybind| keybind[0] == application) {
+                            if let Some(key) = keybind.iter().find(|key| *key == application) {
+                                ui.add_sized([20.0, 20.0], egui::Button::new(keybind[2].to_string() + " + " + keybind[3]).fill(egui::Color32::TRANSPARENT));
                             }
-                            Err(e) => {
-                                println!("Failed to refresh active windows. Error: {}", e);
+                            else {
+                                ui.add_sized([20.0, 20.0], egui::Button::new("~").fill(egui::Color32::TRANSPARENT));
                             }
                         }
+                        else {
+                            ui.add_sized([20.0, 20.0], egui::Button::new("~").fill(egui::Color32::TRANSPARENT));
+                        }
                     }
-                }
-
-                columns[1].add_space(10.0);
-
-                // Keybinds
-                columns[1].label("Keybind");
-                egui::ScrollArea::vertical().id_salt("active_keybinds").show(&mut columns[1], |ui| {
                 });
             });
         });
@@ -99,7 +120,11 @@ impl eframe::App for App {
 
 
 fn main() -> Result<(), Box<dyn Error>> {
-    let options = eframe::NativeOptions::default();
+    let options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default()
+            .with_inner_size([1300.0, 600.0]),
+        ..Default::default()
+    };
     let _ = eframe::run_native(
         "Workstation Hotkey Manager",
         options,
