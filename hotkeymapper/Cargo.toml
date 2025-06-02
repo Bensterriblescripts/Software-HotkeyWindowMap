@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 eframe = "0.31.1"
-winapi = { version = "0.3", features = ["winuser", "windef", "minwindef"] }
+regex = "1.11.1"
+winapi = { version = "0.3", features = ["winuser", "windef", "minwindef", "processthreadsapi", "psapi", "handleapi", "winnt", "memoryapi", "ntdef", "ntstatus", "libloaderapi"] }
