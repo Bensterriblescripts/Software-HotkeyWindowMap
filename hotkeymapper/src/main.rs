@@ -13,12 +13,22 @@ struct App {
     keybind_selected_modifier: String,
     keybind_selected_key: String,
 
+    // Modal state
+    show_keybind_modal: bool,
+    editing_app_name: String,
+
     regex: Vec<Regex>,
 }
 struct Application {
     handle: HWND,
     label: String,
     path: String,
+}
+struct Keybind {
+    application: String,
+    executable: String,
+    modifier: String,
+    key: String,
 }
 
 // Initialise State
@@ -33,12 +43,18 @@ impl App {
             keybind_selected_modifier: String::new(),
             keybind_selected_key: String::new(),
 
+            // Modal state
+            show_keybind_modal: false,
+            editing_app_name: String::new(),
+
             regex: Vec::new(),
         };
 
         // Regex
         app.regex.push(Regex::new(r"^(.*?) - (.*?) - Microsoft​ Edge$").unwrap());
         app.regex.push(Regex::new(r"^(.*?) - File Explorer$").unwrap());
+        app.regex.push(Regex::new(r"^.*\\(.*?) - File Explorer$").unwrap());
+        app.regex.push(Regex::new(r"^(.*?) - Discord$").unwrap());
 
         // Preload Application List
         if std::env::consts::OS == "windows" {
@@ -48,7 +64,7 @@ impl App {
         }
 
         // Keybinds
-        app.keybinds.push(["main.rs - hotkeymapper - Cursor", "cursor.exe", "", "U"]);
+        app.keybinds.push(["Cursor", "cursor.exe", "Ctrl", "U"]);
 
         app
     }   
@@ -70,7 +86,7 @@ impl eframe::App for App {
                                 Ok(applications) => {
                                     self.applications = applications.iter()
                                         .filter_map(|(handle, title, path)| {
-                                            if path.trim().is_empty() {
+                                            if title.trim().is_empty() {
                                                 None
                                             }
                                             else {
@@ -124,21 +140,18 @@ impl eframe::App for App {
                     // List of Associated Keybinds
                     for application in &self.applications {
                         
-                        // Key Bound to Application (By Title)
+                        // Keybind Found
                         if let Some(keybind) = self.keybinds.iter().find(|keybind| keybind[0] == &application.label) {
-                            if keybind[0] == self.keybind_selected {
-                                println!("Clicked on the selected keybind");
-                            }
                             
-                            let keybind_text = if keybind[2].is_empty() {
-                                format!("{}", keybind[3])
-                            } 
-                            else {
-                                format!("{}+{}", keybind[2], keybind[3])
-                            };
+                            let keybind_text = if keybind[2].is_empty() { format!("{}", keybind[3]) }       // Character Only
+                            else { format!("{} + {}", keybind[2], keybind[3]) };                                    // Modifier + Character
+
+                            // Change Button
                             let button = egui::Button::new(&keybind_text);
                             let new_button = ui.add_sized([20.0, 20.0], button.fill(egui::Color32::TRANSPARENT));
                             if new_button.clicked() {
+                                self.show_keybind_modal = true;
+                                self.editing_app_name = application.label.clone();
                                 self.keybind_selected = keybind[1].to_string();
                                 self.keybind_selected_modifier = keybind[2].to_string();
                                 self.keybind_selected_key = keybind[3].to_string();
@@ -153,6 +166,55 @@ impl eframe::App for App {
                 });
             });
         });
+
+        // Keybind editing modal
+        if self.show_keybind_modal {
+            egui::Window::new("Edit Keybind")
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .show(ctx, |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.label(format!("Editing keybind for: {}", self.editing_app_name));
+                        ui.add_space(10.0);
+
+                        ui.horizontal(|ui| {
+                            ui.label("Modifier:");
+                            egui::ComboBox::from_id_salt("modifier_combo")
+                                .selected_text(&self.keybind_selected_modifier)
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(&mut self.keybind_selected_modifier, "".to_string(), "None");
+                                    ui.selectable_value(&mut self.keybind_selected_modifier, "Ctrl".to_string(), "Ctrl");
+                                    ui.selectable_value(&mut self.keybind_selected_modifier, "Alt".to_string(), "Alt");
+                                    ui.selectable_value(&mut self.keybind_selected_modifier, "Shift".to_string(), "Shift");
+                                    ui.selectable_value(&mut self.keybind_selected_modifier, "Win".to_string(), "Win");
+                                });
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.label("Key:");
+                            ui.text_edit_singleline(&mut self.keybind_selected_key);
+                        });
+
+                        ui.add_space(20.0);
+
+                        ui.horizontal(|ui| {
+                            if ui.button("Save").clicked() {
+                                // Update the keybind
+                                if let Some(keybind) = self.keybinds.iter_mut().find(|kb| kb[0] == self.editing_app_name) {
+                                    keybind[2] = Box::leak(self.keybind_selected_modifier.clone().into_boxed_str());
+                                    keybind[3] = Box::leak(self.keybind_selected_key.clone().into_boxed_str());
+                                }
+                                self.show_keybind_modal = false;
+                            }
+
+                            if ui.button("Cancel").clicked() {
+                                self.show_keybind_modal = false;
+                            }
+                        });
+                    });
+                });
+        }
     }
 }
 
@@ -160,7 +222,7 @@ impl eframe::App for App {
 fn main() -> Result<(), Box<dyn Error>> {
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([1600.0, 600.0]),
+            .with_inner_size([1000.0, 600.0]),
         ..Default::default()
     };
     let _ = eframe::run_native(

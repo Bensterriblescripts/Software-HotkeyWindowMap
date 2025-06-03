@@ -133,7 +133,14 @@ pub fn list_visible_windows(regex: &Vec<Regex>) -> Result<Vec<(HWND, String, Str
         }
 
         else if regex[1].is_match(&window.1) {
-            window.1 = format!("File Explorer - ({})", regex[1].captures(&window.1).unwrap()[1].to_string());
+            let title = regex[2].captures(&window.1).unwrap()[1].to_string();
+            let path = regex[1].captures(&window.1).unwrap()[1].to_string();
+            window.1 = format!("File Explorer - {}", title);
+            window.2 = format!("explorer.exe \"{}\"", path);
+        }
+
+        else if regex[3].is_match(&window.1) {
+            window.1 = "Discord".to_string();
         }
 
         else {
