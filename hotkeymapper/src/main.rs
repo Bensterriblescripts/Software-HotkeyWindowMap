@@ -1,4 +1,5 @@
 mod windows;
+mod keybinds;
 use std::error::Error;
 use eframe::egui;
 use regex::Regex;
