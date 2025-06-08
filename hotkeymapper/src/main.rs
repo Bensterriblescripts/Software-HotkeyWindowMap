@@ -301,8 +301,11 @@ impl eframe::App for App {
                                 if let Some(keybind) = self.keybinds.iter_mut().find(|kb| kb[0] == self.editing_app_name) {
                                     keybind[2] = self.keybind_selected_modifier.clone();
                                     keybind[3] = self.keybind_selected_key.clone();
+                                    println!("Stored {} with the binding {} and modifier {}", keybind[0], keybind[3], keybind[2]);
                                     save_config(&self.config_path, &self.keybinds).unwrap();
-
+                                }
+                                else {
+                                    self.keybinds.push();
                                 }
                                 self.show_keybind_modal = false;
                             }
