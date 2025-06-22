@@ -16,7 +16,7 @@ struct App {
     config_path: String,
 
     // Keybinds
-    keybinds: Vec<[String; 4]>, // [ApplicationName, ExecutablePath+Arguments, Modifier, Key]
+    active_keybinds: Vec<[String; 4]>, // [ApplicationName, ExecutablePath+Arguments, Modifier, Key]
     keybind_selected: String,   
     keybind_selected_modifier: String,
     keybind_selected_key: String,
@@ -37,7 +37,9 @@ struct Application {
 struct Keybind {
     application: Application,
     modifier: String,
+    modifiercode: i32,
     key: String,
+    keycode: i32,
 }
 #[derive(Serialize, Deserialize)]
 struct ConfigKeybind {
@@ -55,7 +57,7 @@ impl App {
             selected_application: None,
             config_path: String::new(),
             
-            keybinds: Vec::new(),
+            active_keybinds: Vec::new(),
             keybind_selected: String::new(),
             keybind_selected_modifier: String::new(),
             keybind_selected_key: String::new(),
@@ -97,7 +99,7 @@ impl App {
         };
 
         // Retrieve the Keybinds
-        app.keybinds = load_config(&app.config_path).unwrap_or_default();
+        app.active_keybinds = load_config(&app.config_path).unwrap_or_default();
 
         /* End Configuration File */
 
@@ -113,9 +115,12 @@ impl App {
             if let Ok(applications) = windows::list_visible_windows(&app.regex) {
                 app.applications = applications.iter().map(|(handle, title, path)| Application { handle: *handle, label: title.to_string(), path: path.to_string() }).collect();
                 for application in &app.applications {
-                    if let Some(keybind) = app.keybinds.iter().find(|keybind| keybind[0] == application.label) {
+                    if let Some(keybind) = app.active_keybinds.iter().find(|keybind| keybind[0] == application.label) {
+                        let modifiercode = keybinds::get_key_code(&keybind[2]);
+                        let keycode = keybinds::get_key_code(&keybind[3]);
+                        app.active_keybinds.push([application.label.clone(), application.path.clone(), keybind[2].clone(), keybind[3].clone(), modifiercode, keycode]);
                     }
-                }
+                }w
             }
         }
 
@@ -197,7 +202,7 @@ impl eframe::App for App {
                     for application in &self.applications {
                         
                         // Keybind Found
-                        if let Some(keybind) = self.keybinds.iter().find(|keybind| keybind[0] == application.label) {
+                        if let Some(keybind) = self.active_keybinds.iter().find(|keybind| keybind[0] == application.label) {
                             
                             let keybind_text = if keybind[2].is_empty() { format!("{}", keybind[3]) }               // Character Only
                             else { format!("{} + {}", keybind[2], keybind[3]) };                                            // Modifier + Character
@@ -253,13 +258,13 @@ impl eframe::App for App {
                     // Handle Keybind Refresh
                     if refresh_keybinds {
                         for application in &self.applications {
-                            if let Some(keybind) = self.keybinds.iter_mut().find(|keybind| keybind[0] == application.label) {
+                            if let Some(keybind) = self.active_keybinds.iter_mut().find(|keybind| keybind[0] == application.label) {
                                 keybind[1] = application.path.clone();
                                 keybind[2] = "".to_string();
                                 keybind[3] = "".to_string();
                             }
                         }
-                        save_config(&self.config_path, &self.keybinds).unwrap();
+                        save_config(&self.config_path, &self.active_keybinds).unwrap();
                     }
                 });
             });
@@ -298,14 +303,14 @@ impl eframe::App for App {
 
                         ui.horizontal(|ui| {
                             if ui.button("Save").clicked() {
-                                if let Some(keybind) = self.keybinds.iter_mut().find(|kb| kb[0] == self.editing_app_name) {
+                                if let Some(keybind) = self.active_keybinds.iter_mut().find(|kb| kb[0] == self.editing_app_name) {
                                     keybind[2] = self.keybind_selected_modifier.clone();
                                     keybind[3] = self.keybind_selected_key.clone();
                                     println!("Stored {} with the binding {} and modifier {}", keybind[0], keybind[3], keybind[2]);
-                                    save_config(&self.config_path, &self.keybinds).unwrap();
+                                    save_config(&self.config_path, &self.active_keybinds).unwrap();
                                 }
                                 else {
-                                    self.keybinds.push();
+                                    self.active_keybinds.push([self.editing_app_name.clone(), "".to_string(), self.keybind_selected_modifier.clone(), self.keybind_selected_key.clone()]);
                                 }
                                 self.show_keybind_modal = false;
                             }
