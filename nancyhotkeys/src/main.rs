@@ -12,6 +12,7 @@ struct App {
     active_applications: Vec<Application>,
 
     show_keybindwindow: bool,
+
     update_keybind: Keybind,
     regex: Vec<Regex>,
 }
@@ -148,6 +149,60 @@ impl eframe::App for App {
                     }
                 });
             });
+
+            
+        /* New Keybind Modal */
+        if self.show_keybindwindow {
+            egui::Window::new("Edit Keybind")
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .show(ctx, |ui| {
+                    ui.vertical_centered(|ui| {
+                        ui.label(format!("Editing keybind for: {}", self.update_keybind.label));
+                        ui.add_space(10.0);
+
+                        ui.horizontal(|ui| {
+                            ui.label("Modifier:");
+                            egui::ComboBox::from_id_salt("modifier_combo")
+                                .selected_text(&self.update_keybind.modifier)
+                                .show_ui(ui, |ui| {
+                                    ui.selectable_value(&mut self.update_keybind.modifier, "".to_string(), "None");
+                                    ui.selectable_value(&mut self.update_keybind.modifier, "Ctrl".to_string(), "Ctrl");
+                                    ui.selectable_value(&mut self.update_keybind.modifier, "Alt".to_string(), "Alt");
+                                    ui.selectable_value(&mut self.update_keybind.modifier, "Shift".to_string(), "Shift");
+                                    ui.selectable_value(&mut self.update_keybind.modifier, "Win".to_string(), "Win");
+                                });
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.label("Key:");
+                            ui.text_edit_singleline(&mut self.update_keybind.key);
+                        });
+
+                        ui.add_space(20.0);
+
+                        ui.horizontal(|ui| {
+                            if ui.button("Save").clicked() {
+                                self.update_keybind.keycode = get_key_code(&self.update_keybind.key);
+                                self.update_keybind.modifiercode = get_key_code(&self.update_keybind.modifier);
+                                if let Some(index) = self.active_keybinds.iter().position(|kb| kb.label == self.update_keybind.label) {
+                                    self.active_keybinds[index] = self.update_keybind.clone();
+                                }
+                                else {
+                                    self.active_keybinds.push(self.update_keybind.clone());
+                                }
+                                self.show_keybindwindow = false;
+                            }
+
+                            if ui.button("Cancel").clicked() {
+                                self.show_keybindwindow = false;
+                            }
+                        });
+                    });
+                }
+            );
+        }
         });
 
         fn set_keybindbuttonlabel(label: &str, key: &str, modifier: &str) -> String {
