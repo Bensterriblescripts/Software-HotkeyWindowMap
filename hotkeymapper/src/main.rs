@@ -255,6 +255,7 @@ impl eframe::App for App {
                             }
                         }
                     }
+
                     // Handle Keybind Refresh
                     if refresh_keybinds {
                         for application in &self.applications {
