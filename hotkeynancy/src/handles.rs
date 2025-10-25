@@ -156,9 +156,18 @@ pub fn make_windowed(window_title: &str) -> Result<(), Box<dyn Error>>{
 }
 pub fn set_focus(hwnd: HWND) -> Result<(), Box<dyn Error>>{
     unsafe {
-        ShowWindow(hwnd, SW_SHOWMAXIMIZED);
-        BringWindowToTop(hwnd);
-        SetForegroundWindow(hwnd);
+        if hwnd.is_null() {
+            return Err("Window handle is null".into());
+        }
+        if ShowWindow(hwnd, SW_SHOWMAXIMIZED) == 0 {
+            return Err("Failed to show window".into());
+        }
+        if BringWindowToTop(hwnd) == 0 {
+            return Err("Failed to bring window to top".into());
+        }
+        if SetForegroundWindow(hwnd) == 0 {
+            return Err("Failed to set foreground window".into());
+        }
     }
     Ok(())
 }
