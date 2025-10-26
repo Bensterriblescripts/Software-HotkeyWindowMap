@@ -1,5 +1,3 @@
-/hotkeymapper/target
+/**/target/
+Cargo.lock
 hotkeymapper/Cargo.lock
-hotkeymapper/Cargo.lock
-/nancyhotkeys/target
-nancyhotkeys/Cargo.lock
