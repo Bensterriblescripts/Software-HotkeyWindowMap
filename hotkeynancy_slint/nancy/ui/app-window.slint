@@ -1,0 +1,32 @@
+import { Button, VerticalBox, HorizontalBox } from "std-widgets.slint";
+
+export struct Hotkey { name: string, keybind: string }
+export struct BorderlessApplication { name: string, borderless_type: string }
+export struct Program { label: string }
+
+export component AppWindow inherits Window {
+    width: 600px; height: 450px; title: "Nancy";
+    in-out property <int> counter: 42;
+    in-out property <[Program]> allprograms: [];
+    in-out property <[Hotkey]> hotkeys: [];
+    in-out property <[BorderlessApplication]> borderless_applications: [];
+
+    VerticalLayout {
+
+        VerticalBox {
+            Text { text: "Hotkeys"; font-size: 24px; font-weight: 600; } alignment: center;
+            for hk in root.hotkeys: HorizontalLayout {
+                HorizontalBox { padding: 2px; padding-left: 5px; Text { text: "\{hk.name}"; font-size: 18px; font-weight: 600; horizontal-alignment: left; } }
+                HorizontalBox { padding: 2px; padding-right: 5px; Text { text: "\{hk.keybind}"; font-size: 18px; font-weight: 600; height: 24px; horizontal-alignment: right;} }
+            }
+        }
+
+        VerticalBox { 
+            Text { text: "Borderless Applications"; font-size: 24px; font-weight: 600; } alignment: center;
+            for hk in root.borderless_applications: HorizontalLayout {
+                HorizontalBox { padding: 2px; padding-left: 5px; Text { text: "\{hk.name}"; font-size: 18px; font-weight: 600; horizontal-alignment: left; } }
+                HorizontalBox { padding: 2px; padding-right: 5px; Text { text: "\{hk.borderless_type}"; font-size: 18px; font-weight: 600; height: 24px; horizontal-alignment: right;} }
+            } 
+        }
+    }
+}
