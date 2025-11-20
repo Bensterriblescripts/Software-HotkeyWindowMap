@@ -8,10 +8,10 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as $models from "./models.js";
+import * as osapi$0 from "../github.com/Bensterriblescripts/Lib-Handlers/osapi/models.js";
 
 /**
- * @returns {$CancellablePromise<$models.Window[]>}
+ * @returns {$CancellablePromise<osapi$0.Window[]>}
  */
 export function GetAllActiveWindows() {
     return $Call.ByID(2408806900).then(/** @type {($result: any) => any} */(($result) => {
@@ -20,5 +20,5 @@ export function GetAllActiveWindows() {
 }
 
 // Private type creation functions
-const $$createType0 = $models.Window.createFrom;
+const $$createType0 = osapi$0.Window.createFrom;
 const $$createType1 = $Create.Array($$createType0);

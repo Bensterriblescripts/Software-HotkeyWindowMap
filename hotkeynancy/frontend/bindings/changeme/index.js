@@ -6,7 +6,3 @@ import * as HWNDManager from "./hwndmanager.js";
 export {
     HWNDManager
 };
-
-export {
-    Window
-} from "./models.js";

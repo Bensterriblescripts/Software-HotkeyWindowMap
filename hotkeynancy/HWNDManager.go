@@ -1,7 +1,7 @@
 package main
 
 import (
-	osapi "github.com/Bensterriblescripts/Lib-Handlers/os"
+	"github.com/Bensterriblescripts/Lib-Handlers/osapi"
 )
 
 type HWNDManager struct{}
@@ -9,6 +9,6 @@ type HWNDManager struct{}
 var activeWindows []osapi.Window
 
 func (h *HWNDManager) GetAllActiveWindows() []osapi.Window {
-	activeWindows = osapi.GetActiveWindows()
+	activeWindows = osapi.GetAllActiveWindows()
 	return activeWindows
 }
