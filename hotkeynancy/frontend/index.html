@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <link rel="icon" type="image/svg+xml" href="/wails.png"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="stylesheet" href="/style.css"/>
+    <title>Wails App</title>
+</head>
+<body>
+<div id="container">
+    <div id="main" class="card">
+    </div>
+</div>
+<script type="module">
+    import {HWNDManager} from "/bindings/changeme";
+
+    window.onload = async () => {
+        try {
+            const activeWindows = await HWNDManager.GetAllActiveWindows();
+            console.log(`Active Windows: ${activeWindows}`);
+            if (activeWindows.length === 0) {
+                document.getElementById('active-windows').innerHTML = `No active windows found`;
+            } else {
+                for (const window of activeWindows) {
+                    const newWindow = document.createElement('div');
+                    newWindow.innerHTML = `<b>${window.Title}</b>`;
+                    newWindow.setAttribute('handle', window.Handle.toString());
+                    newWindow.setAttribute('process', window.Process.toString());
+                    document.getElementById('main').appendChild(newWindow);
+
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            document.getElementById('active-windows').innerHTML = `Unable to retrieve active windows`;
+        }
+    }
+</script>
+</body>
+</html>
