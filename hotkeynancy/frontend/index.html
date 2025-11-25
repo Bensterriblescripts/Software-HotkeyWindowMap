@@ -19,23 +19,48 @@
         try {
             const activeWindows = await HWNDManager.GetAllActiveWindows();
             console.log(`Active Windows: ${activeWindows}`);
+            const mainDiv = document.getElementById('main');
+            
             if (activeWindows.length === 0) {
-                document.getElementById('active-windows').innerHTML = `No active windows found`;
+                mainDiv.innerHTML = `<div class="result">No active windows found</div>`;
             } else {
                 for (const window of activeWindows) {
-                    const newWindow = document.createElement('div');
-                    newWindow.innerHTML = `<b>${window.Title}</b>`;
-                    newWindow.setAttribute('handle', window.Handle.toString());
-                    newWindow.setAttribute('process', window.Process.toString());
-                    document.getElementById('main').appendChild(newWindow);
-
+                    const windowItem = document.createElement('div');
+                    windowItem.className = 'window-item';
+                    
+                    windowItem.innerHTML = `
+                        <div class="window-title" title="${window.Title}">${window.Title}</div>
+                        <div class="window-controls">
+                            <input type="text" class="hotkey-input" placeholder="Set Hotkey">
+                            <button class="borderless-btn" onclick="setBorderlessFullscreen(this, ${window.Handle})">Set Borderless Fullscreen</button>
+                        </div>
+                    `;
+                    
+                    windowItem.setAttribute('data-handle', window.Handle.toString());
+                    windowItem.setAttribute('data-process', window.Process.toString());
+                    
+                    mainDiv.appendChild(windowItem);
                 }
             }
         } catch (err) {
             console.error(err);
-            document.getElementById('active-windows').innerHTML = `Unable to retrieve active windows`;
+            document.getElementById('main').innerHTML = `<div class="result">Unable to retrieve active windows</div>`;
+        }
+    }
+    window.setBorderlessFullscreen = async (button, handle) => {
+        try {
+            if (button.classList.contains('active')) {
+                await HWNDManager.ToggleBorderlessFullscreen(handle);
+                button.innerHTML = 'Set Borderless Fullscreen';
+                button.classList.remove('active');
+            } else {
+                await HWNDManager.ToggleBorderlessFullscreen(handle);
+                button.innerHTML = 'Borderless Fullscreen';
+                button.classList.add('active');  
+            }
+        } catch (err) {
+            alert(`Error: ${err}`);
+            button.innerHTML = 'Error';
         }
     }
 </script>
-</body>
-</html>

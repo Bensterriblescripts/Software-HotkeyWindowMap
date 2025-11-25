@@ -43,13 +43,12 @@ a:hover {
 }
 
 button {
-    width: 60px;
     height: 30px;
     line-height: 30px;
     border-radius: 3px;
     border: none;
-    margin: 0 0 0 20px;
-    padding: 0 8px;
+    margin: 0 0 0 10px;
+    padding: 0 12px;
     cursor: pointer;
 }
 
@@ -72,6 +71,12 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+}
+
+#main {
+    width: 100%;
+    max-width: 800px;
+    padding: 20px;
 }
 
 h1 {
@@ -154,4 +159,79 @@ h1 {
 .input-box .input:focus {
     border: none;
     background-color: rgba(255, 255, 255, 1);
+}
+
+/* New Styles for Window Items */
+.window-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.window-item:last-child {
+    border-bottom: none;
+}
+
+.window-title {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 15px;
+    font-weight: 500;
+}
+
+.window-controls {
+    display: grid;
+    grid-template-columns: 110px 240px;
+    gap: 10px;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.hotkey-input {
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    padding: 5px 10px;
+    color: inherit;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 0.9em;
+}
+
+.hotkey-input:focus {
+    outline: none;
+    border-color: #646cff;
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.borderless-btn {
+    background-color: #646cff;
+    color: white;
+    width: 100%;
+    margin: 0;
+    padding: 0 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.borderless-btn:hover {
+    background-color: #535bf2;
+}
+
+button.active {
+    background-color: #6b7280;
+    color: #e5e7eb;
+    cursor: pointer;
+}
+
+button.active:hover {
+    background-color: #4b5563;
+    color: #ffffff;
 }
