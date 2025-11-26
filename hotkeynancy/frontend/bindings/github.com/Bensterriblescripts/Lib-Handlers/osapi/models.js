@@ -47,6 +47,13 @@ export class Window {
              */
             this["Executable"] = "";
         }
+        if (!("Style" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["Style"] = 0;
+        }
 
         Object.assign(this, $$source);
     }

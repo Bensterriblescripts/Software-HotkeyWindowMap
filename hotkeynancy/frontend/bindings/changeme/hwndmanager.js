@@ -19,6 +19,14 @@ export function GetAllActiveWindows() {
     }));
 }
 
+/**
+ * @param {number} handle
+ * @returns {$CancellablePromise<void>}
+ */
+export function ToggleBorderlessFullscreen(handle) {
+    return $Call.ByID(2665511276, handle);
+}
+
 // Private type creation functions
 const $$createType0 = osapi$0.Window.createFrom;
 const $$createType1 = $Create.Array($$createType0);

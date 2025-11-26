@@ -3,7 +3,7 @@ module changeme
 go 1.25.3
 
 require (
-	github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251120073030-ca6316384c17
+	github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251125093036-4c3416cc4b1c
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.40
 )
 
