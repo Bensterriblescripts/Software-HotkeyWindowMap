@@ -23,7 +23,7 @@ func main() {
 		Name:        "HotkeyNancy",
 		Description: "Hotkey and borderless window manager",
 		Services: []application.Service{
-			application.NewService(&HWNDManager{}),
+			application.NewService(&WindowManager{}),
 		},
 		Assets: application.AssetOptions{
 			Handler: application.AssetFileServerFS(assets),

@@ -187,27 +187,83 @@ h1 {
 
 .window-controls {
     display: grid;
-    grid-template-columns: 110px 240px;
+    grid-template-columns: auto 240px;
     gap: 10px;
     align-items: center;
     flex-shrink: 0;
 }
 
-.hotkey-input {
+.hotkey-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.modifier-select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.87);
+    padding: 0 28px 0 10px;
+    height: 28px;
+    font-size: 0.8em;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+}
+
+.modifier-select:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.modifier-select:focus {
+    outline: none;
+    border-color: #646cff;
+    background-color: rgba(255, 255, 255, 0.12);
+}
+
+.modifier-select option {
+    background-color: #1b2636;
+    color: rgba(255, 255, 255, 0.87);
+    padding: 8px;
+}
+
+.hotkey-separator {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.85em;
+    font-weight: 500;
+}
+
+.hotkey-letter {
     background-color: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 4px;
-    padding: 5px 10px;
+    padding: 4px 8px;
     color: inherit;
-    width: 100%;
+    width: 46px;
+    height: 28px;
     box-sizing: border-box;
-    font-size: 0.9em;
+    font-size: 0.85em;
+    text-align: center;
+    text-transform: uppercase;
 }
 
-.hotkey-input:focus {
+.hotkey-letter:focus {
     outline: none;
     border-color: #646cff;
     background-color: rgba(255, 255, 255, 0.15);
+}
+
+.hotkey-letter::placeholder {
+    text-transform: none;
+    font-size: 0.9em;
 }
 
 .borderless-btn {
