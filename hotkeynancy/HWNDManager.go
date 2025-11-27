@@ -12,7 +12,9 @@ func (h *HWNDManager) GetAllActiveWindows() []osapi.Window {
 	activeWindows = osapi.GetAllActiveWindows()
 	return activeWindows
 }
-func (h *HWNDManager) ToggleBorderlessFullscreen(handle int) {
+func (h *HWNDManager) SetBorderlessFullscreen(handle int) {
 	osapi.SetBorderlessWindow(uintptr(handle))
-
+}
+func (h *HWNDManager) SetWindowed(handle int) {
+	osapi.SetWindowWindowed(uintptr(handle))
 }

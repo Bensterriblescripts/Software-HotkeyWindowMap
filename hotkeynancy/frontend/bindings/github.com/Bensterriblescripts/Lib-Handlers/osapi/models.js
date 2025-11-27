@@ -47,12 +47,12 @@ export class Window {
              */
             this["Executable"] = "";
         }
-        if (!("Style" in $$source)) {
+        if (!("WindowState" in $$source)) {
             /**
              * @member
-             * @type {number}
+             * @type {string}
              */
-            this["Style"] = 0;
+            this["WindowState"] = "";
         }
 
         Object.assign(this, $$source);

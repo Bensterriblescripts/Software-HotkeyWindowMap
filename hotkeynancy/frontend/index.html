@@ -30,14 +30,15 @@
                     
                     windowItem.innerHTML = `
                         <div class="window-title" title="${window.Title}">${window.Title}</div>
-                        <div class="window-controls">
+                        <div class="window-controls" current-state="${window.WindowState}">
                             <input type="text" class="hotkey-input" placeholder="Set Hotkey">
-                            <button class="borderless-btn" onclick="setBorderlessFullscreen(this, ${window.Handle})">Set Borderless Fullscreen</button>
+                            <button class="borderless-btn" onclick="toggleBorderlessFullscreen(this, ${window.Handle})">Set Borderless Fullscreen</button>
                         </div>
                     `;
                     
                     windowItem.setAttribute('data-handle', window.Handle.toString());
                     windowItem.setAttribute('data-process', window.Process.toString());
+                    windowItem.setAttribute('current-state', window.WindowState);
                     
                     mainDiv.appendChild(windowItem);
                 }
@@ -47,16 +48,22 @@
             document.getElementById('main').innerHTML = `<div class="result">Unable to retrieve active windows</div>`;
         }
     }
-    window.setBorderlessFullscreen = async (button, handle) => {
+    window.toggleBorderlessFullscreen = async (button, handle) => {
         try {
-            if (button.classList.contains('active')) {
-                await HWNDManager.ToggleBorderlessFullscreen(handle);
+            const currentState = button.parentElement.getAttribute('current-state');
+            console.log('Current state: ' + currentState);
+            if (currentState !== null && currentState === 'Borderless Fullscreen') {
+                console.log('Setting windowed');
+                await HWNDManager.SetWindowed(handle);
                 button.innerHTML = 'Set Borderless Fullscreen';
+                button.parentElement.setAttribute('current-state', 'Windowed');  
                 button.classList.remove('active');
             } else {
-                await HWNDManager.ToggleBorderlessFullscreen(handle);
+                console.log('Setting borderless fullscreen');
+                await HWNDManager.SetBorderlessFullscreen(handle);
                 button.innerHTML = 'Borderless Fullscreen';
-                button.classList.add('active');  
+                button.parentElement.setAttribute('current-state', 'Borderless Fullscreen');
+                button.classList.add('active');
             }
         } catch (err) {
             alert(`Error: ${err}`);

@@ -23,8 +23,16 @@ export function GetAllActiveWindows() {
  * @param {number} handle
  * @returns {$CancellablePromise<void>}
  */
-export function ToggleBorderlessFullscreen(handle) {
-    return $Call.ByID(2665511276, handle);
+export function SetBorderlessFullscreen(handle) {
+    return $Call.ByID(1654841156, handle);
+}
+
+/**
+ * @param {number} handle
+ * @returns {$CancellablePromise<void>}
+ */
+export function SetWindowed(handle) {
+    return $Call.ByID(127463687, handle);
 }
 
 // Private type creation functions
