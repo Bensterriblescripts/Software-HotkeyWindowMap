@@ -38,6 +38,14 @@ export function SetBorderlessFullscreen(handle) {
 
 /**
  * @param {number} handle
+ * @returns {$CancellablePromise<void>}
+ */
+export function SetFocus(handle) {
+    return $Call.ByID(4189917713, handle);
+}
+
+/**
+ * @param {number} handle
  * @param {string} hotkey
  * @returns {$CancellablePromise<void>}
  */

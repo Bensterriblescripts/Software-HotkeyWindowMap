@@ -32,6 +32,8 @@ func main() {
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:            "Hotkey Nancy",
 		BackgroundColour: application.NewRGB(27, 38, 54),
+		Width:            1200,
+		Height:           800,
 		URL:              "/",
 	})
 

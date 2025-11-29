@@ -23,6 +23,7 @@ var (
 	procGetSystemMetrics    = user32.NewProc("GetSystemMetrics")
 	procGetWindowLongW      = user32.NewProc("GetWindowLongW")
 	procSetWindowLongW      = user32.NewProc("SetWindowLongW")
+	procGetWindowRect       = user32.NewProc("GetWindowRect")
 
 	procMonitorFromWindow = user32.NewProc("MonitorFromWindow")
 	procGetMonitorInfoW   = user32.NewProc("GetMonitorInfoW")
@@ -61,8 +62,32 @@ const (
 	WS_OVERLAPPEDWINDOW      = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU
 )
 
-/* Window Information and Retrieval */
-func FindWindowByTitle(title string) uintptr {
+type Window struct {
+	Title        string
+	FullTitle    string
+	Handle       uintptr
+	Process      uint32
+	Executable   string
+	WindowState  string
+	OriginalRect RECT
+}
+type RECT struct {
+	Left   int32
+	Top    int32
+	Right  int32
+	Bottom int32
+}
+type MONITORINFO struct {
+	CbSize    uint32
+	RcMonitor RECT
+	RcWork    RECT
+	DwFlags   uint32
+}
+
+var activeWindows []Window
+
+/* Get Information and Retrieval */
+func GetWindowByTitle(title string) uintptr {
 	t, err := windows.UTF16PtrFromString(title)
 	if err != nil {
 		return 0
@@ -100,7 +125,7 @@ func GetAllActiveWindows() []Window {
 	TraceLog("GetAllActiveWindows started")
 	activeWindows = make([]Window, 0)
 
-	cb := syscall.NewCallback(enumWindowsCallback)
+	cb := syscall.NewCallback(EnumWindowsCallback)
 	ret, _, err := procEnumWindows.Call(
 		cb,
 		0,
@@ -138,201 +163,19 @@ func GetWindowState(hwnd uintptr) string {
 		return "Windowed"
 	}
 }
-
-type Window struct {
-	Title       string
-	FullTitle   string
-	Handle      uintptr
-	Process     uint32
-	Executable  string
-	WindowState string
-}
-
-var activeWindows []Window
-
-/* Helper Functions */
-func enumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
-	if visible, _, _ := procIsWindowVisible.Call(hwnd); visible == 0 {
-		return 1
+func GetWindowRect(hwnd uintptr) RECT {
+	var rect RECT
+	r, _, _ := procGetWindowRect.Call(hwnd, uintptr(unsafe.Pointer(&rect)), uintptr(unsafe.Sizeof(rect)))
+	if r == 0 {
+		ErrorLog("GetWindowRect failed")
+		return RECT{}
 	}
-
-	var window Window
-	window.Handle = hwnd
-	if _, _, e := procGetWindowThreadProcessId.Call(
-		hwnd,
-		uintptr(unsafe.Pointer(&window.Process)),
-	); window.Process == 0 {
-		if e != nil && e != syscall.Errno(0) {
-			ErrorLog(fmt.Sprintf("GetWindowThreadProcessId failed for hwnd=0x%x: %v", hwnd, e))
-		} else {
-			TraceLog(fmt.Sprintf("Skipping window with PID 0: hwnd=0x%x", hwnd))
-		}
-		return 1
-	}
-
-	window.Title = GetWindowTitle(hwnd)
-	if window.Title == "" {
-		return 1
-	}
-	window.FullTitle = window.Title
-
-	exePath, err := getProcessImagePath(window.Process)
-	if err != nil {
-		ErrorLog(fmt.Sprintf("getProcessImagePath failed for PID %d: %v", window.Process, err))
-	} else {
-		window.Executable = exePath
-	}
-
-	if window.Executable != "" {
-		if desc, ferr := getFileDescriptionByPath(window.Executable); ferr != nil {
-			ErrorLog(fmt.Sprintf("getFileDescriptionByPath(%q) failed: %v", window.Executable, ferr))
-		} else if desc != "" {
-			window.Title = desc
-		}
-	}
-
-	TraceLog(fmt.Sprintf("Found Window: hwnd=0x%x, title=%q", hwnd, window.Title))
-	activeWindows = append(activeWindows, window)
-	return 1
-}
-func getProcessImagePath(pid uint32) (path string, err error) {
-	const PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
-
-	h, err := windows.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid)
-	if err != nil {
-		return "", err
-	}
-
-	defer func() {
-		err := windows.CloseHandle(h)
-		if err != nil {
-			ErrorLog(fmt.Sprintf("CloseHandle failed for pid=%d: %v", pid, err))
-		}
-	}()
-
-	buf := make([]uint16, 260)
-	size := uint32(len(buf))
-
-	r0, _, e := procQueryFullProcessImageNameW.Call(
-		uintptr(h),
-		0,
-		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(unsafe.Pointer(&size)),
-	)
-	if r0 == 0 {
-		if e != nil && e != syscall.Errno(0) {
-			err = e
-			return "", err
-		}
-		err = fmt.Errorf("QueryFullProcessImageNameW returned 0 without extended error")
-		return "", err
-	}
-
-	path = windows.UTF16ToString(buf[:size])
-	return path, nil
-}
-func getFileDescriptionByPath(path string) (desc string, err error) {
-	if path == "" {
-		return "", nil
-	}
-
-	p, err := syscall.UTF16PtrFromString(path)
-	if err != nil {
-		return "", err
-	}
-
-	var handle uint32
-	r0, _, callErr := procGetFileVersionInfoSizeW.Call(
-		uintptr(unsafe.Pointer(p)),
-		uintptr(unsafe.Pointer(&handle)),
-	)
-	if r0 == 0 {
-		TraceLog(fmt.Sprintf("No version info available for %q", path))
-		return "", nil
-	}
-	size := uint32(r0)
-
-	buf := make([]byte, size)
-	r0, _, callErr = procGetFileVersionInfoW.Call(
-		uintptr(unsafe.Pointer(p)),
-		0,
-		uintptr(size),
-		uintptr(unsafe.Pointer(&buf[0])),
-	)
-	if r0 == 0 {
-		if callErr != nil && callErr != syscall.Errno(0) {
-			err = callErr
-			return "", err
-		}
-		err = fmt.Errorf("GetFileVersionInfoW returned 0 for %q", path)
-		return "", err
-	}
-
-	var transPtr uintptr
-	var transLen uint32
-	r0, _, callErr = procVerQueryValueW.Call(
-		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(`\VarFileInfo\Translation`))),
-		uintptr(unsafe.Pointer(&transPtr)),
-		uintptr(unsafe.Pointer(&transLen)),
-	)
-	if r0 == 0 || transLen < 4 {
-		if callErr != nil && callErr != syscall.Errno(0) {
-			TraceLog(fmt.Sprintf("VerQueryValueW(Translation) fallback for %q: %v", path, callErr))
-		}
-		return queryFileDescription(buf, 0x0409, 0x04B0)
-	}
-
-	start := uintptr(unsafe.Pointer(&buf[0]))
-	offset := transPtr - start
-	lang := *(*uint16)(unsafe.Pointer(&buf[offset]))
-	codepage := *(*uint16)(unsafe.Pointer(&buf[offset+2]))
-
-	return queryFileDescription(buf, lang, codepage)
-}
-func queryFileDescription(buf []byte, lang, codepage uint16) (desc string, err error) {
-	subBlock := fmt.Sprintf(`\StringFileInfo\%04x%04x\FileDescription`, lang, codepage)
-
-	var valuePtr uintptr
-	var valueLen uint32
-	r0, _, callErr := procVerQueryValueW.Call(
-		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(unsafe.Pointer(syscall.StringToUTF16Ptr(subBlock))),
-		uintptr(unsafe.Pointer(&valuePtr)),
-		uintptr(unsafe.Pointer(&valueLen)),
-	)
-	if r0 == 0 || valueLen == 0 {
-		if callErr != nil && callErr != syscall.Errno(0) {
-			err = callErr
-			return "", err
-		}
-		err = fmt.Errorf("VerQueryValueW returned no data for %q", subBlock)
-		return "", err
-	}
-
-	start := uintptr(unsafe.Pointer(&buf[0]))
-	offset := valuePtr - start
-	desc = windows.UTF16PtrToString((*uint16)(unsafe.Pointer(&buf[int(offset)])))
-	TraceLog(fmt.Sprintf("File description (%s): %q", subBlock, desc))
-	return desc, nil
-}
-
-type RECT struct {
-	Left   int32
-	Top    int32
-	Right  int32
-	Bottom int32
-}
-type MONITORINFO struct {
-	CbSize    uint32
-	RcMonitor RECT
-	RcWork    RECT
-	DwFlags   uint32
+	return rect
 }
 
 /* Alter Window State and Focus */
 func SetBorderlessWindow(hwnd uintptr) {
-	x, y, width, height := getMonitorByWindow(hwnd)
+	x, y, width, height := GetMonitorByWindow(hwnd)
 	styleIndex := int32(GWL_STYLE)
 	origStyle, _, callErr := procGetWindowLongW.Call(
 		hwnd,
@@ -354,7 +197,7 @@ func SetBorderlessWindow(hwnd uintptr) {
 		ErrorLog(fmt.Sprintf("SetWindowLongW(GWL_STYLE) failed for hwnd=0x%x: %v", hwnd, callErr))
 		return
 	}
-	setWindowPos(
+	SetWindowPos(
 		hwnd,
 		0,
 		x,
@@ -378,23 +221,34 @@ func SetBorderlessWindow(hwnd uintptr) {
 	SetFocus(hwnd)
 }
 func SetWindowWindowed(hwnd uintptr) {
-	x, y, width, height := getMonitorByWindow(hwnd)
+	var window Window
+	for _, activeWindow := range activeWindows {
+		if activeWindow.Handle == hwnd {
+			window = activeWindow
+			break
+		}
+	}
+	if window.Handle == 0 {
+		TraceLog("SetWindowWindowed: Window not found, refreshing active windows...")
+		GetAllActiveWindows()
+		SetWindowWindowed(hwnd) // A bit lazy but it will prevent windows changes during an operation
+		return
+	}
 
 	styleIndex := int32(GWL_STYLE)
 	r2, _, _ := procGetWindowLongW.Call(hwnd, uintptr(styleIndex))
 	origStyle := r2
 
 	newStyle := (origStyle | uintptr(WS_OVERLAPPEDWINDOW)) &^ uintptr(WS_POPUP)
-
 	procSetWindowLongW.Call(hwnd, uintptr(styleIndex), newStyle)
 
-	setWindowPos(
+	SetWindowPos(
 		hwnd,
 		0,
-		x,
-		y,
-		width,
-		height,
+		window.OriginalRect.Left,
+		window.OriginalRect.Top,
+		window.OriginalRect.Right-window.OriginalRect.Left,
+		window.OriginalRect.Bottom-window.OriginalRect.Top,
 		SWP_FRAMECHANGED|SWP_SHOWWINDOW,
 	)
 
@@ -414,7 +268,6 @@ func SetFocus(hwnd uintptr) {
 		ErrorLog("SetFocus: window handle is null")
 		return
 	}
-	procShowWindow.Call(hwnd, uintptr(SW_SHOWMAXIMIZED))
 
 	r2, _, _ := procBringWindowToTop.Call(hwnd)
 	if r2 == 0 {
@@ -427,35 +280,4 @@ func SetFocus(hwnd uintptr) {
 		ErrorLog("SetFocus: failed to set foreground window")
 		return
 	}
-}
-func getMonitorByWindow(hwnd uintptr) (x int32, y int32, width int32, height int32) {
-	r0, _, _ := procMonitorFromWindow.Call(hwnd, uintptr(MONITOR_DEFAULTTONEAREST))
-	if r0 == 0 {
-		ErrorLog("failed to get monitor for window")
-	}
-	monitor := r0
-	mi := MONITORINFO{
-		CbSize: uint32(unsafe.Sizeof(MONITORINFO{})),
-	}
-	r1, _, _ := procGetMonitorInfoW.Call(monitor, uintptr(unsafe.Pointer(&mi)))
-	if r1 == 0 {
-		ErrorLog("GetMonitorInfoW failed")
-	}
-	x = mi.RcMonitor.Left
-	y = mi.RcMonitor.Top
-	width = mi.RcMonitor.Right - mi.RcMonitor.Left
-	height = mi.RcMonitor.Bottom - mi.RcMonitor.Top
-	return x, y, width, height
-}
-func setWindowPos(hwnd uintptr, hwndInsertAfter uintptr, x, y, cx, cy int32, flags uint32) bool {
-	r, _, _ := procSetWindowPos.Call(
-		uintptr(hwnd),
-		uintptr(hwndInsertAfter),
-		uintptr(x),
-		uintptr(y),
-		uintptr(cx),
-		uintptr(cy),
-		uintptr(flags),
-	)
-	return r != 0
 }

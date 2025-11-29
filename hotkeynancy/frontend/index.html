@@ -14,52 +14,13 @@
 </div>
 <script type="module">
     import {WindowManager} from "/bindings/hotkeynancy";
+    let lastRefresh = 0;
 
     window.onload = async () => {
-        
         try {
             const activeHotkeys = await WindowManager.GetAllHotkeys();
             const activeWindows = await WindowManager.GetAllActiveWindows();
-
-            console.log(`Active Windows: ${activeWindows}`);
-            const mainDiv = document.getElementById('main');
-            
-            if (activeWindows.length === 0) {
-                mainDiv.innerHTML = `<div class="result">No active windows found</div>`;
-            } else {
-                for (const window of activeWindows) {
-                    const windowItem = document.createElement('div');
-                    windowItem.className = 'window-item';
-
-                    let buttonText = 'Set Borderless Fullscreen';
-                    let classActive = '';
-                    if (window.WindowState === 'Borderless' || window.WindowState === 'Fullscreen') {
-                        buttonText = 'Set Windowed';
-                        classActive = 'active';
-                    }
-
-                    windowItem.innerHTML = `
-                        <div class="window-title" title="${window.Title}">${window.Title}</div>
-                        <div class="window-controls" current-state="${window.WindowState}" handle=${window.Handle.toString()}>
-                            <div class="hotkey-group">
-                                <select class="modifier-select" handle=${window.Handle.toString()}>
-                                    <option value="" selected>None</option>
-                                    <option value="ctrl">Ctrl</option>
-                                    <option value="alt">Alt</option>
-                                    <option value="shift">Shift</option>
-                                    <option value="ctrl+alt">Ctrl+Alt</option>
-                                    <option value="ctrl+shift">Ctrl+Shift</option>
-                                    <option value="alt+shift">Alt+Shift</option>
-                                </select>
-                                <span class="hotkey-separator">+</span>
-                                <input type="text" class="hotkey-letter" placeholder="Key" maxlength="1" handle=${window.Handle.toString()} current-hotkey="${activeHotkeys[window.Handle.toString()]}">
-                            </div>
-                            <button class="borderless-btn ${classActive}" onclick="toggleBorderlessFullscreen(this)" handle=${window.Handle.toString()}>${buttonText}</button>
-                        </div>
-                    `;                    
-                    mainDiv.appendChild(windowItem);
-                }
-            }
+            await setActiveWindows(activeWindows, activeHotkeys);
         } catch (err) {
             console.error(err);
             document.getElementById('main').innerHTML = `<div class="result">Unable to retrieve active windows</div>`;
@@ -90,6 +51,14 @@
         }
     }
 
+    window.toggleFocus = async (button) => {
+        try {
+            const handle = button.parentElement.getAttribute('handle');
+            await WindowManager.SetFocus(parseInt(handle));
+        } catch (err) {
+            alert(`Error: ${err}`);
+        }
+    }
     document.addEventListener('keyup', async (e) => {
         if (e.key === 'Enter' && e.target.placeholder === 'Set Hotkey') {
             console.log("Triggered enter key event on hotkey input")
@@ -102,4 +71,65 @@
             await WindowManager.SetHotkey(parseInt(e.target.getAttribute('handle')), e.target.value);
         }
     });
+    window.addEventListener('focus', async () => {
+        if (Date.now() - lastRefresh > 1000) {
+            lastRefresh = Date.now();
+            console.log("Refreshing active windows...");
+            const activeWindows = await WindowManager.GetAllActiveWindows();
+            const activeHotkeys = await WindowManager.GetAllHotkeys();
+            await setActiveWindows(activeWindows, activeHotkeys);
+        } else {
+            console.log("Refreshing too quickly, skipping...");
+        }
+    });
+
+    async function setActiveWindows(activeWindows, activeHotkeys) {
+        const mainDiv = document.getElementById('main');
+        
+        if (activeWindows.length === 0) {
+            mainDiv.innerHTML = `<div class="result">No active windows found</div>`;
+        } else {
+            mainDiv.innerHTML = '';
+            for (const window of activeWindows) {
+                const windowItem = document.createElement('div');
+                windowItem.className = 'window-item';
+
+                let buttonText = 'Set Borderless Fullscreen';
+                let classActive = '';
+                if (window.WindowState === 'Borderless' || window.WindowState === 'Fullscreen') {
+                    buttonText = 'Set Windowed';
+                    classActive = 'active';
+                }
+
+                if (activeHotkeys[window.Handle.toString()] === undefined) {
+                    activeHotkeys[window.Handle.toString()] = '';
+                }
+
+                windowItem.innerHTML = `
+                    <div class="window-title" title="${window.Title}">${window.Title}</div>
+                    <div class="window-controls" current-state="${window.WindowState}" handle=${window.Handle.toString()}>
+                        <div class="hotkey-group">
+                            <select class="modifier-select" handle=${window.Handle.toString()}>
+                                <option value="" selected>None</option>
+                                <option value="ctrl">Ctrl</option>
+                                <option value="alt">Alt</option>
+                                <option value="shift">Shift</option>
+                                <option value="ctrl+alt">Ctrl+Alt</option>
+                                <option value="ctrl+shift">Ctrl+Shift</option>
+                                <option value="alt+shift">Alt+Shift</option>
+                            </select>
+                            <span class="hotkey-separator">+</span>
+                            <input type="text" class="hotkey-letter" placeholder="Key" maxlength="1" handle=${window.Handle.toString()} current-hotkey="${activeHotkeys[window.Handle.toString()]}">
+                        </div>
+                        <button class="borderless-btn ${classActive}" onclick="toggleBorderlessFullscreen(this)" handle=${window.Handle.toString()}>${buttonText}</button>
+                        <button class="focus-btn" onclick="toggleFocus(this)" handle=${window.Handle.toString()}>Focus</button>
+                    </div>
+                `;                    
+                mainDiv.appendChild(windowItem);
+            }
+        }
+        console.log("Finished retrieving active windows");
+        lastRefresh = Date.now();
+    }
+        
 </script>

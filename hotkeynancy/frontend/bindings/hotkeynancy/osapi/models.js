@@ -6,6 +6,55 @@
 // @ts-ignore: Unused imports
 import { Create as $Create } from "@wailsio/runtime";
 
+export class RECT {
+    /**
+     * Creates a new RECT instance.
+     * @param {Partial<RECT>} [$$source = {}] - The source object to create the RECT.
+     */
+    constructor($$source = {}) {
+        if (!("Left" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["Left"] = 0;
+        }
+        if (!("Top" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["Top"] = 0;
+        }
+        if (!("Right" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["Right"] = 0;
+        }
+        if (!("Bottom" in $$source)) {
+            /**
+             * @member
+             * @type {number}
+             */
+            this["Bottom"] = 0;
+        }
+
+        Object.assign(this, $$source);
+    }
+
+    /**
+     * Creates a new RECT instance from a string or object.
+     * @param {any} [$$source = {}]
+     * @returns {RECT}
+     */
+    static createFrom($$source = {}) {
+        let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        return new RECT(/** @type {Partial<RECT>} */($$parsedSource));
+    }
+}
+
 export class Window {
     /**
      * Creates a new Window instance.
@@ -54,6 +103,13 @@ export class Window {
              */
             this["WindowState"] = "";
         }
+        if (!("OriginalRect" in $$source)) {
+            /**
+             * @member
+             * @type {RECT}
+             */
+            this["OriginalRect"] = (new RECT());
+        }
 
         Object.assign(this, $$source);
     }
@@ -64,7 +120,14 @@ export class Window {
      * @returns {Window}
      */
     static createFrom($$source = {}) {
+        const $$createField6_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
+        if ("OriginalRect" in $$parsedSource) {
+            $$parsedSource["OriginalRect"] = $$createField6_0($$parsedSource["OriginalRect"]);
+        }
         return new Window(/** @type {Partial<Window>} */($$parsedSource));
     }
 }
+
+// Private type creation functions
+const $$createType0 = RECT.createFrom;

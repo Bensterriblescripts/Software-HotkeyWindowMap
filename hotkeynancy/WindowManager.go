@@ -50,6 +50,9 @@ func (h *WindowManager) SetWindowed(handle int) {
 	}
 	osapi.SetWindowWindowed(uintptr(handle))
 }
+func (h *WindowManager) SetFocus(handle int) {
+	osapi.SetFocus(uintptr(handle))
+}
 
 func (h *WindowManager) GetAllHotkeys() map[int]string {
 	return activeHotkeys
