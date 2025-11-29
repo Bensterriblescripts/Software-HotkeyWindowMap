@@ -1,7 +1,7 @@
 dario.cat/mergo v1.0.2 h1:85+piFYR1tMbRrLcDwR18y4UKJ3aH1Tbzi24VRW1TK8=
 dario.cat/mergo v1.0.2/go.mod h1:E/hbnu0NxMFBjpMIE34DRGLWqDy0g5FuKDhCb31ngxA=
-github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251127054101-ba051fb1af38 h1:QFvByEY46vvjdZ/9fpH4fZ9x0iptTwTOA3nwiSJtc6s=
-github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251127054101-ba051fb1af38/go.mod h1:Gs/3ea2BYEyOaF7uv+5Ne7d1y/FyQKc5OiSXqQwMi8Q=
+github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251127055143-cd2c404804ee h1:gVq8vlqnDefqD3vBWZcLwIK2uJKsO8pkAvmV32KJ+o4=
+github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251127055143-cd2c404804ee/go.mod h1:Gs/3ea2BYEyOaF7uv+5Ne7d1y/FyQKc5OiSXqQwMi8Q=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=

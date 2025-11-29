@@ -8,15 +8,7 @@ import { Call as $Call, CancellablePromise as $CancellablePromise, Create as $Cr
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Unused imports
-import * as osapi$0 from "../github.com/Bensterriblescripts/Lib-Handlers/osapi/models.js";
-
-/**
- * @param {string} title
- * @returns {$CancellablePromise<void>}
- */
-export function AddIgnoredWindow(title) {
-    return $Call.ByID(3953533134, title);
-}
+import * as osapi$0 from "./osapi/models.js";
 
 /**
  * @returns {$CancellablePromise<osapi$0.Window[]>}
@@ -34,24 +26,6 @@ export function GetAllHotkeys() {
     return $Call.ByID(2845810777).then(/** @type {($result: any) => any} */(($result) => {
         return $$createType2($result);
     }));
-}
-
-/**
- * @param {string} title
- * @returns {$CancellablePromise<string[]>}
- */
-export function IgnoreWindow(title) {
-    return $Call.ByID(2862262375, title).then(/** @type {($result: any) => any} */(($result) => {
-        return $$createType3($result);
-    }));
-}
-
-/**
- * @param {string} title
- * @returns {$CancellablePromise<void>}
- */
-export function RemoveIgnoredWindow(title) {
-    return $Call.ByID(1045720713, title);
 }
 
 /**
@@ -83,4 +57,3 @@ export function SetWindowed(handle) {
 const $$createType0 = osapi$0.Window.createFrom;
 const $$createType1 = $Create.Array($$createType0);
 const $$createType2 = $Create.Map($Create.Any, $Create.Any);
-const $$createType3 = $Create.Array($Create.Any);

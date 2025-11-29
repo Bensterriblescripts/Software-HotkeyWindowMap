@@ -13,7 +13,7 @@
     </div>
 </div>
 <script type="module">
-    import {WindowManager} from "/bindings/changeme";
+    import {WindowManager} from "/bindings/hotkeynancy";
 
     window.onload = async () => {
         
@@ -30,6 +30,14 @@
                 for (const window of activeWindows) {
                     const windowItem = document.createElement('div');
                     windowItem.className = 'window-item';
+
+                    let buttonText = 'Set Borderless Fullscreen';
+                    let classActive = '';
+                    if (window.WindowState === 'Borderless' || window.WindowState === 'Fullscreen') {
+                        buttonText = 'Set Windowed';
+                        classActive = 'active';
+                    }
+
                     windowItem.innerHTML = `
                         <div class="window-title" title="${window.Title}">${window.Title}</div>
                         <div class="window-controls" current-state="${window.WindowState}" handle=${window.Handle.toString()}>
@@ -46,7 +54,7 @@
                                 <span class="hotkey-separator">+</span>
                                 <input type="text" class="hotkey-letter" placeholder="Key" maxlength="1" handle=${window.Handle.toString()} current-hotkey="${activeHotkeys[window.Handle.toString()]}">
                             </div>
-                            <button class="borderless-btn" onclick="toggleBorderlessFullscreen(this)" handle=${window.Handle.toString()}>Set Borderless Fullscreen</button>
+                            <button class="borderless-btn ${classActive}" onclick="toggleBorderlessFullscreen(this)" handle=${window.Handle.toString()}>${buttonText}</button>
                         </div>
                     `;                    
                     mainDiv.appendChild(windowItem);
@@ -61,23 +69,19 @@
         try {
             const currentState = button.parentElement.getAttribute('current-state');
             const handle = button.parentElement.getAttribute('handle');
-            if (handle === null || handle === '') {
-                alert('No handle found for window: ' + button.parentElement.getAttribute('title'));
-                return;
-            }
 
             console.log('Current state: ' + currentState);
-            if (currentState !== null && currentState === 'Borderless Fullscreen') {
-                console.log('Setting windowed');
+            if (currentState !== null && currentState === 'Borderless') {
+                console.log('Setting: Windowed');
                 await WindowManager.SetWindowed(parseInt(handle));
                 button.innerHTML = 'Set Borderless Fullscreen';
                 button.parentElement.setAttribute('current-state', 'Windowed');  
                 button.classList.remove('active');
             } else {
-                console.log('Setting borderless fullscreen');
+                console.log('Setting: Borderless');
                 await WindowManager.SetBorderlessFullscreen(parseInt(handle));
-                button.innerHTML = 'Borderless Fullscreen';
-                button.parentElement.setAttribute('current-state', 'Borderless Fullscreen');
+                button.innerHTML = 'Set Windowed';
+                button.parentElement.setAttribute('current-state', 'Borderless');
                 button.classList.add('active');
             }
         } catch (err) {

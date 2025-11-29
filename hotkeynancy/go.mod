@@ -1,10 +1,11 @@
-module changeme
+module hotkeynancy
 
 go 1.25.3
 
 require (
-	github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251127054101-ba051fb1af38
+	github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251127055143-cd2c404804ee
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.41
+	golang.org/x/sys v0.38.0
 )
 
 require (
@@ -45,7 +46,6 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.45.0 // indirect
 	golang.org/x/net v0.47.0 // indirect
-	golang.org/x/sys v0.38.0 // indirect
 	golang.org/x/text v0.31.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
