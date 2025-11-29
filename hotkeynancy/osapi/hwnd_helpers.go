@@ -34,7 +34,7 @@ func EnumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 	}
 	window.FullTitle = window.Title
 	for _, activeWindow := range activeWindows {
-		if window.Handle == hwnd {
+		if activeWindow.Handle == hwnd {
 			window.OriginalRect = activeWindow.OriginalRect
 			break
 		}
@@ -42,6 +42,7 @@ func EnumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 	if window.OriginalRect == (RECT{}) {
 		window.OriginalRect = GetWindowRect(hwnd)
 	}
+	window.MonitorInfo = GetMonitorByWindow(hwnd)
 
 	exePath, err := GetProcessImagePath(window.Process)
 	if err != nil {
@@ -183,24 +184,25 @@ func QueryFileDescription(buf []byte, lang, codepage uint16) (desc string, err e
 	TraceLog(fmt.Sprintf("File description (%s): %q", subBlock, desc))
 	return desc, nil
 }
-func GetMonitorByWindow(hwnd uintptr) (x int32, y int32, width int32, height int32) {
+func GetMonitorByWindow(hwnd uintptr) RECT {
 	r0, _, _ := procMonitorFromWindow.Call(hwnd, uintptr(MONITOR_DEFAULTTONEAREST))
 	if r0 == 0 {
 		ErrorLog("failed to get monitor for window")
 	}
 	monitor := r0
-	mi := MONITORINFO{
-		CbSize: uint32(unsafe.Sizeof(MONITORINFO{})),
-	}
+	var mi MONITORINFO
+	mi.CbSize = uint32(unsafe.Sizeof(MONITORINFO{}))
 	r1, _, _ := procGetMonitorInfoW.Call(monitor, uintptr(unsafe.Pointer(&mi)))
 	if r1 == 0 {
 		ErrorLog("GetMonitorInfoW failed")
 	}
-	x = mi.RcMonitor.Left
-	y = mi.RcMonitor.Top
-	width = mi.RcMonitor.Right - mi.RcMonitor.Left
-	height = mi.RcMonitor.Bottom - mi.RcMonitor.Top
-	return x, y, width, height
+
+	var rect RECT
+	rect.Left = mi.RcMonitor.Left
+	rect.Top = mi.RcMonitor.Top
+	rect.Right = mi.RcMonitor.Right
+	rect.Bottom = mi.RcMonitor.Bottom
+	return rect
 }
 func SetWindowPos(hwnd uintptr, hwndInsertAfter uintptr, x, y, cx, cy int32, flags uint32) bool {
 	r, _, _ := procSetWindowPos.Call(

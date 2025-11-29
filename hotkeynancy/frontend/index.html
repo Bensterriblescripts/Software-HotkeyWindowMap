@@ -33,24 +33,33 @@
         try {
             const currentState = button.parentElement.getAttribute('current-state');
             const handle = button.parentElement.getAttribute('handle');
-
             console.log('Current state: ' + currentState);
-            if (currentState !== null && currentState === 'Borderless') {
+            if (currentState === 'Borderless') {
+                if (button.innerText === 'Set Borderless Fullscreen') {
+                    console.log("Already set to borderless...");
+                    return;
+                }
                 console.log('Setting: Windowed');
                 await WindowManager.SetWindowed(parseInt(handle));
-                button.innerHTML = 'Set Borderless Fullscreen';
+                button.innerText = 'Set Borderless Fullscreen';
                 button.parentElement.setAttribute('current-state', 'Windowed');  
                 button.classList.remove('active');
-            } else {
+            } else if (currentState === 'Windowed') {
+                if (button.innerText === 'Set Windowed') {
+                    console.log("Already set to windowed...");
+                    return;
+                }
                 console.log('Setting: Borderless');
                 await WindowManager.SetBorderlessFullscreen(parseInt(handle));
-                button.innerHTML = 'Set Windowed';
+                button.innerText = 'Set Windowed';
                 button.parentElement.setAttribute('current-state', 'Borderless');
                 button.classList.add('active');
+            } else {
+                console.log("Unknown state: " + currentState);
             }
         } catch (err) {
             alert(`Error: ${err}`);
-            button.innerHTML = 'Error';
+            button.innerText = 'Error';
         }
     }
 

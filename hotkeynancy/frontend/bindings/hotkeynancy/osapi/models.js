@@ -110,6 +110,13 @@ export class Window {
              */
             this["OriginalRect"] = (new RECT());
         }
+        if (!("MonitorInfo" in $$source)) {
+            /**
+             * @member
+             * @type {RECT}
+             */
+            this["MonitorInfo"] = (new RECT());
+        }
 
         Object.assign(this, $$source);
     }
@@ -121,9 +128,13 @@ export class Window {
      */
     static createFrom($$source = {}) {
         const $$createField6_0 = $$createType0;
+        const $$createField7_0 = $$createType0;
         let $$parsedSource = typeof $$source === 'string' ? JSON.parse($$source) : $$source;
         if ("OriginalRect" in $$parsedSource) {
             $$parsedSource["OriginalRect"] = $$createField6_0($$parsedSource["OriginalRect"]);
+        }
+        if ("MonitorInfo" in $$parsedSource) {
+            $$parsedSource["MonitorInfo"] = $$createField7_0($$parsedSource["MonitorInfo"]);
         }
         return new Window(/** @type {Partial<Window>} */($$parsedSource));
     }

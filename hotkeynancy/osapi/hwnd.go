@@ -40,6 +40,10 @@ var (
 
 	procBringWindowToTop    = user32.NewProc("BringWindowToTop")
 	procSetForegroundWindow = user32.NewProc("SetForegroundWindow")
+	procGetMessageW         = user32.NewProc("GetMessageW")
+
+	procRegisterHotKey   = user32.NewProc("RegisterHotKey")
+	procUnregisterHotKey = user32.NewProc("UnregisterHotKey")
 )
 
 const (
@@ -58,8 +62,16 @@ const (
 
 	MONITOR_DEFAULTTONEAREST = 0x00000002
 	SW_SHOW                  = 5
+	SW_RESTORE               = 9
 	SW_SHOWMAXIMIZED         = 3
 	WS_OVERLAPPEDWINDOW      = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU
+
+	WM_HOTKEY    = 0x0312
+	MOD_ALT      = 0x0001
+	MOD_CONTROL  = 0x0002
+	MOD_SHIFT    = 0x0004
+	MOD_WIN      = 0x0008
+	MOD_NOREPEAT = 0x4000
 )
 
 type Window struct {
@@ -70,6 +82,7 @@ type Window struct {
 	Executable   string
 	WindowState  string
 	OriginalRect RECT
+	MonitorInfo  RECT
 }
 type RECT struct {
 	Left   int32
@@ -82,6 +95,21 @@ type MONITORINFO struct {
 	RcMonitor RECT
 	RcWork    RECT
 	DwFlags   uint32
+}
+
+type MSG struct {
+	Hwnd     uintptr
+	Message  uint32
+	WParam   uintptr
+	LParam   uintptr
+	Time     uint32
+	Pt       POINT
+	LPrivate uint32
+}
+
+type POINT struct {
+	X int32
+	Y int32
 }
 
 var activeWindows []Window
@@ -175,7 +203,29 @@ func GetWindowRect(hwnd uintptr) RECT {
 
 /* Alter Window State and Focus */
 func SetBorderlessWindow(hwnd uintptr) {
-	x, y, width, height := GetMonitorByWindow(hwnd)
+	var window Window
+	for _, activeWindow := range activeWindows {
+		if activeWindow.Handle == hwnd {
+			window = activeWindow
+			break
+		}
+	}
+	if window.Handle == 0 {
+		TraceLog("Window not found, refreshing active windows...")
+		GetAllActiveWindows()
+		for _, activeWindow := range activeWindows {
+			if activeWindow.Handle == hwnd {
+				window = activeWindow
+				break
+			}
+		}
+		if window.Handle == 0 {
+			ErrorLog("Tried to edit a handle that no longer exists")
+			return
+		}
+	}
+	window.OriginalRect = GetWindowRect(hwnd)
+
 	styleIndex := int32(GWL_STYLE)
 	origStyle, _, callErr := procGetWindowLongW.Call(
 		hwnd,
@@ -197,13 +247,14 @@ func SetBorderlessWindow(hwnd uintptr) {
 		ErrorLog(fmt.Sprintf("SetWindowLongW(GWL_STYLE) failed for hwnd=0x%x: %v", hwnd, callErr))
 		return
 	}
+
 	SetWindowPos(
 		hwnd,
 		0,
-		x,
-		y,
-		width,
-		height,
+		window.MonitorInfo.Left,
+		window.MonitorInfo.Top,
+		window.MonitorInfo.Right-window.MonitorInfo.Left,
+		window.MonitorInfo.Bottom-window.MonitorInfo.Top,
 		SWP_FRAMECHANGED|SWP_SHOWWINDOW,
 	)
 
@@ -211,14 +262,9 @@ func SetBorderlessWindow(hwnd uintptr) {
 		hwnd,
 		uintptr(SW_SHOW),
 	)
-	for _, window := range activeWindows {
-		if window.Handle == hwnd {
-			window.WindowState = "Borderless"
-			break
-		}
-	}
 
-	SetFocus(hwnd)
+	window.WindowState = "Borderless"
+	SetVisible(hwnd)
 }
 func SetWindowWindowed(hwnd uintptr) {
 	var window Window
@@ -229,10 +275,18 @@ func SetWindowWindowed(hwnd uintptr) {
 		}
 	}
 	if window.Handle == 0 {
-		TraceLog("SetWindowWindowed: Window not found, refreshing active windows...")
+		TraceLog("Window not found, refreshing active windows...")
 		GetAllActiveWindows()
-		SetWindowWindowed(hwnd) // A bit lazy but it will prevent windows changes during an operation
-		return
+		for _, activeWindow := range activeWindows {
+			if activeWindow.Handle == hwnd {
+				window = activeWindow
+				break
+			}
+		}
+		if window.Handle == 0 {
+			ErrorLog("Tried to edit a handle that no longer exists")
+			return
+		}
 	}
 
 	styleIndex := int32(GWL_STYLE)
@@ -254,16 +308,10 @@ func SetWindowWindowed(hwnd uintptr) {
 
 	procShowWindow.Call(hwnd, uintptr(SW_SHOW))
 
-	for _, window := range activeWindows {
-		if window.Handle == hwnd {
-			window.WindowState = "Windowed"
-			break
-		}
-	}
-
-	SetFocus(hwnd)
+	window.WindowState = "Windowed"
+	SetVisible(hwnd)
 }
-func SetFocus(hwnd uintptr) {
+func SetFocus(hwnd uintptr) { // Bring window to front and steal focus from other windows
 	if hwnd == 0 {
 		ErrorLog("SetFocus: window handle is null")
 		return
@@ -280,4 +328,16 @@ func SetFocus(hwnd uintptr) {
 		ErrorLog("SetFocus: failed to set foreground window")
 		return
 	}
+}
+func SetVisible(hwnd uintptr) { // Less aggressive than SetFocus, will open if minimised/tray
+	procShowWindow.Call(hwnd, SW_RESTORE)
+}
+func GetMessage(msg *MSG, hwnd uintptr, msgFilterMin uint32, msgFilterMax uint32) int32 {
+	r, _, _ := procGetMessageW.Call(
+		uintptr(unsafe.Pointer(msg)),
+		hwnd,
+		uintptr(msgFilterMin),
+		uintptr(msgFilterMax),
+	)
+	return int32(r)
 }

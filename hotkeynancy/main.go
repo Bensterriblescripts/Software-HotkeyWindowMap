@@ -3,6 +3,7 @@ package main
 import (
 	"embed"
 	_ "embed"
+	"hotkeynancy/osapi"
 	"log"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
@@ -18,6 +19,8 @@ func main() {
 	TraceDebug = true
 	ConsoleLogging = true
 	InitLogs()
+
+	go osapi.StartKeylogger()
 
 	app := application.New(application.Options{
 		Name:        "HotkeyNancy",
