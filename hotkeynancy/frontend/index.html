@@ -14,18 +14,21 @@
 </div>
 <script type="module">
     import {WindowManager} from "/bindings/hotkeynancy";
+    import { Events } from "@wailsio/runtime";
     let lastRefresh = 0;
 
     window.onload = async () => {
         try {
-            const activeHotkeys = await WindowManager.GetAllHotkeys();
-            const activeWindows = await WindowManager.GetAllActiveWindows();
-            await setActiveWindows(activeWindows, activeHotkeys);
+            await setActiveWindows();
         } catch (err) {
             console.error(err);
             document.getElementById('main').innerHTML = `<div class="result">Unable to retrieve active windows</div>`;
         }
     }
+    Events.On('common:WindowFocus', async () => {
+        console.log("Window focus event triggered");
+        await setActiveWindows();
+    });
     window.toggleBorderlessFullscreen = async (button) => {
         try {
             const currentState = button.parentElement.getAttribute('current-state');
@@ -71,19 +74,15 @@
             await WindowManager.SetHotkey(parseInt(e.target.getAttribute('handle')), e.target.value);
         }
     });
-    window.addEventListener('focus', async () => {
-        if (Date.now() - lastRefresh > 1000) {
-            lastRefresh = Date.now();
-            console.log("Refreshing active windows...");
-            const activeWindows = await WindowManager.GetAllActiveWindows();
-            const activeHotkeys = await WindowManager.GetAllHotkeys();
-            await setActiveWindows(activeWindows, activeHotkeys);
-        } else {
-            console.log("Refreshing too quickly, skipping...");
-        }
-    });
 
-    async function setActiveWindows(activeWindows, activeHotkeys) {
+    async function setActiveWindows() { // This will actually trigger 3x on the event unfortunately
+        if (Date.now() - lastRefresh < 1000) {
+            return;
+        }
+        console.log("Refreshing active windows...");
+        lastRefresh = Date.now();
+        const activeWindows = await WindowManager.GetAllActiveWindows();
+        const activeHotkeys = await WindowManager.GetAllHotkeys();
         const mainDiv = document.getElementById('main');
         
         if (activeWindows.length === 0) {
@@ -129,7 +128,6 @@
             }
         }
         console.log("Finished retrieving active windows");
-        lastRefresh = Date.now();
     }
         
 </script>
