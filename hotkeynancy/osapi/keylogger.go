@@ -2,7 +2,6 @@ package osapi
 
 import (
 	"runtime"
-	"time"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
@@ -26,22 +25,14 @@ func StartKeylogger() {
 		defer UnregisterHotKey(0, hotkeyID)
 
 		for LogKeys {
-			msg := MSG{}
-			if GetMessage(&msg, 0, 0, 0) <= 0 {
+			var msg MSG
+			r := GetMessage(&msg, 0, 0, 0)
+			if r <= 0 {
 				break
 			}
 			if msg.Message == WM_HOTKEY && msg.WParam == uintptr(hotkeyID) {
 				TraceLog("ALT+F1 hotkey pressed")
 			}
-
-			time.Sleep(100 * time.Millisecond)
-		}
-	}()
-
-	go func() {
-		for {
-			PrintProcUsage()
-			time.Sleep(1000 * time.Millisecond)
 		}
 	}()
 }

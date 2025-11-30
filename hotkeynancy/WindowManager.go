@@ -10,7 +10,6 @@ type WindowManager struct{}
 
 var activeWindows []osapi.Window
 var activeHotkeys map[int]string
-var ignoredWindows map[string]bool
 
 func (h *WindowManager) GetAllActiveWindows() []osapi.Window {
 	activeWindows = []osapi.Window{}
