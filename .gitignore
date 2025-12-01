@@ -1,3 +1,7 @@
 /**/target/
 Cargo.lock
 hotkeymapper/Cargo.lock
+/**/.task/
+/**/node_modules/
+/**/build/
+/**/frontend/dist/
