@@ -20,7 +20,7 @@ export function GetAllActiveWindows() {
 }
 
 /**
- * @returns {$CancellablePromise<{ [_: `${number}`]: string }>}
+ * @returns {$CancellablePromise<{ [_: string]: string[] }>}
  */
 export function GetAllHotkeys() {
     return $Call.ByID(2845810777).then(/** @type {($result: any) => any} */(($result) => {
@@ -45,12 +45,13 @@ export function SetFocus(handle) {
 }
 
 /**
- * @param {number} handle
+ * @param {string} executable
+ * @param {string} kotkeymod
  * @param {string} hotkey
  * @returns {$CancellablePromise<void>}
  */
-export function SetHotkey(handle, hotkey) {
-    return $Call.ByID(2969235429, handle, hotkey);
+export function SetHotkey(executable, kotkeymod, hotkey) {
+    return $Call.ByID(2969235429, executable, kotkeymod, hotkey);
 }
 
 /**

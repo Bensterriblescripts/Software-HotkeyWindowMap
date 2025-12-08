@@ -78,11 +78,15 @@
         }
     });
     document.addEventListener('focusout', async (e) => {
-        if (e.target.placeholder === 'Set Hotkey') {
+        if (e.target.placeholder === 'Key') {
             console.log("Triggered blur event on hotkey input")
-            await WindowManager.SetHotkey(parseInt(e.target.getAttribute('handle')), e.target.value);
+            await WindowManager.SetHotkey(e.target.getAttribute('current-executable'), e.target.getAttribute('current-mod'), e.target.value);
         }
     });
+    async function changeHotkey(select) {
+        console.log("Triggered change event on modifier select")
+        await WindowManager.SetHotkey(select.getAttribute('current-executable'), select.value, select.getAttribute('current-hotkey'));
+    }
 
     async function setActiveWindows() { // This will actually trigger 3x on the event unfortunately
         if (Date.now() - lastRefresh < 1000) {
@@ -109,15 +113,15 @@
                     classActive = 'active';
                 }
 
-                if (activeHotkeys[window.Handle.toString()] === undefined) {
-                    activeHotkeys[window.Handle.toString()] = '';
+                if (activeHotkeys[window.Executable] === undefined) {
+                    activeHotkeys[window.Executable] = ['', ''];
                 }
 
                 windowItem.innerHTML = `
                     <div class="window-title" title="${window.Title}">${window.Title}</div>
                     <div class="window-controls" current-state="${window.WindowState}" handle=${window.Handle.toString()}>
                         <div class="hotkey-group">
-                            <select class="modifier-select" handle=${window.Handle.toString()}>
+                            <select class="modifier-select" handle=${window.Handle.toString()} onchange="changeHotkey(this)">
                                 <option value="" selected>None</option>
                                 <option value="ctrl">Ctrl</option>
                                 <option value="alt">Alt</option>
@@ -127,7 +131,7 @@
                                 <option value="alt+shift">Alt+Shift</option>
                             </select>
                             <span class="hotkey-separator">+</span>
-                            <input type="text" class="hotkey-letter" placeholder="Key" maxlength="1" handle=${window.Handle.toString()} current-hotkey="${activeHotkeys[window.Handle.toString()]}">
+                            <input type="text" class="hotkey-letter" placeholder="Key" maxlength="1" handle=${window.Handle.toString()} current-mod="${activeHotkeys[window.Executable][0]}" current-hotkey="${activeHotkeys[window.Executable][1]}">
                         </div>
                         <button class="borderless-btn ${classActive}" onclick="toggleBorderlessFullscreen(this)" handle=${window.Handle.toString()}>${buttonText}</button>
                         <button class="focus-btn" onclick="toggleFocus(this)" handle=${window.Handle.toString()}>Focus</button>

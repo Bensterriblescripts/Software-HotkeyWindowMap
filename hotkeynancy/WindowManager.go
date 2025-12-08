@@ -3,13 +3,15 @@ package main
 import (
 	"hotkeynancy/osapi"
 
+	"github.com/Bensterriblescripts/Lib-Handlers/config"
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
 
 type WindowManager struct{}
 
 var activeWindows []osapi.Window
-var activeHotkeys map[int]string
+var activeHotkeys map[string][2]string
+var hotkeyConfig map[string]string
 
 func (h *WindowManager) GetAllActiveWindows() []osapi.Window {
 	activeWindows = []osapi.Window{}
@@ -53,8 +55,15 @@ func (h *WindowManager) SetFocus(handle int) {
 	osapi.SetFocus(uintptr(handle))
 }
 
-func (h *WindowManager) GetAllHotkeys() map[int]string {
+func (h *WindowManager) GetAllHotkeys() map[string][2]string {
 	return activeHotkeys
 }
-func (h *WindowManager) SetHotkey(handle int, hotkey string) {
+func (h *WindowManager) SetHotkey(executable string, kotkeymod string, hotkey string) {
+	activeHotkeys[executable] = [2]string{kotkeymod, hotkey}
+
+	hotkeyConfig = make(map[string]string, len(activeHotkeys)+1)
+	for exe, keys := range activeHotkeys {
+		hotkeyConfig[exe] = keys[0] + "+" + keys[1]
+	}
+	config.WriteConfig(hotkeyConfig)
 }
