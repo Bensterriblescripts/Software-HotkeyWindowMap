@@ -13,13 +13,18 @@
     </div>
 </div>
 <script type="module">
-    import {WindowManager} from "/bindings/hotkeynancy";
+    import {WindowManager} from "/bindings/nancy";
     import { Events } from "@wailsio/runtime";
     let lastRefresh = 0;
 
-    window.onload = async () => {
+    window.onload = async () => { // Refresh windows on focus or hover
         try {
             await setActiveWindows();
+            const hoverTarget = document.getElementById('container') ?? document.body;
+            hoverTarget.addEventListener('pointerenter', async () => {
+                console.log("Hover event triggered");
+                await setActiveWindows();
+            }, { passive: true });
         } catch (err) {
             console.error(err);
             document.getElementById('main').innerHTML = `<div class="result">Unable to retrieve active windows</div>`;

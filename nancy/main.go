@@ -3,8 +3,8 @@ package main
 import (
 	"embed"
 	_ "embed"
-	"hotkeynancy/osapi"
 	"log"
+	"nancy/osapi"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -15,7 +15,6 @@ var assets embed.FS
 
 func main() {
 	AppName = "HotkeyNancy"
-	ExecutableName = "hotkeynancy"
 	TraceDebug = true
 	ConsoleLogging = true
 	InitLogs()

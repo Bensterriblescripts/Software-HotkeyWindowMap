@@ -1,6 +1,0 @@
-.task
-bin
-/**/node_modules/
-/**/build/
-/**/.idea/
-/**/frontend/dist/

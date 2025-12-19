@@ -1,7 +1,7 @@
 package main
 
 import (
-	"hotkeynancy/osapi"
+	"nancy/osapi"
 
 	"github.com/Bensterriblescripts/Lib-Handlers/config"
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
@@ -65,5 +65,5 @@ func (h *WindowManager) SetHotkey(executable string, kotkeymod string, hotkey st
 	for exe, keys := range activeHotkeys {
 		hotkeyConfig[exe] = keys[0] + "+" + keys[1]
 	}
-	config.WriteConfig(hotkeyConfig)
+	config.WriteSettings(hotkeyConfig)
 }
