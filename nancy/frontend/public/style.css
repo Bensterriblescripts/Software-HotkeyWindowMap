@@ -266,7 +266,7 @@ h1 {
     font-size: 0.9em;
 }
 
-.borderless-btn {
+button {
     background-color: #646cff;
     color: white;
     width: 100%;
@@ -277,7 +277,7 @@ h1 {
     align-items: center;
 }
 
-.borderless-btn:hover {
+button:hover {
     background-color: #535bf2;
 }
 

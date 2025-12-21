@@ -6,6 +6,7 @@ import (
 	"log"
 	"nancy/osapi"
 
+	"github.com/Bensterriblescripts/Lib-Handlers/config"
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 	"github.com/wailsapp/wails/v3/pkg/application"
 )
@@ -18,7 +19,10 @@ func main() {
 	TraceDebug = true
 	ConsoleLogging = true
 	InitLogs()
+	config.ReadConfig()
 
+	osapi.Hotkeys = append(osapi.Hotkeys, osapi.Hotkey{Mod: "alt", Key: "f1"})
+	osapi.Hotkeys = append(osapi.Hotkeys, osapi.Hotkey{Mod: "alt", Key: "f2"})
 	go osapi.StartKeylogger()
 
 	app := application.New(application.Options{

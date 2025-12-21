@@ -62,6 +62,13 @@ export function SetWindowed(handle) {
     return $Call.ByID(3190592750, handle);
 }
 
+/**
+ * @returns {$CancellablePromise<void>}
+ */
+export function ToggleHotkeys() {
+    return $Call.ByID(1781707060);
+}
+
 // Private type creation functions
 const $$createType0 = osapi$0.Window.createFrom;
 const $$createType1 = $Create.Array($$createType0);

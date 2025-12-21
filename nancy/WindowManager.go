@@ -56,9 +56,13 @@ func (h *WindowManager) SetFocus(handle int) {
 }
 
 func (h *WindowManager) GetAllHotkeys() map[string][2]string {
+	activeHotkeys = make(map[string][2]string)
 	return activeHotkeys
 }
 func (h *WindowManager) SetHotkey(executable string, kotkeymod string, hotkey string) {
+	if activeHotkeys[executable] == [2]string{} {
+		activeHotkeys = make(map[string][2]string)
+	}
 	activeHotkeys[executable] = [2]string{kotkeymod, hotkey}
 
 	hotkeyConfig = make(map[string]string, len(activeHotkeys)+1)
@@ -66,4 +70,14 @@ func (h *WindowManager) SetHotkey(executable string, kotkeymod string, hotkey st
 		hotkeyConfig[exe] = keys[0] + "+" + keys[1]
 	}
 	config.WriteSettings(hotkeyConfig)
+	if osapi.LogKeys {
+		osapi.StartKeylogger()
+	}
+}
+func (h *WindowManager) ToggleHotkeys() {
+	if osapi.LogKeys {
+		osapi.StopKeylogger()
+	} else {
+		osapi.StartKeylogger()
+	}
 }

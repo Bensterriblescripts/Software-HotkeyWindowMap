@@ -9,19 +9,29 @@
 </head>
 <body>
 <div id="container">
-    <div id="main" class="card">
+    <div id="nav" style="display: inline-block; margin-left: 2%; width: 100%;">
+        <div id="nav-content" style="display: inline-block;">
+            <button id="nav-btn" style="display: inline-block;" onclick="window.location.href='./hotkeys.html'">Hotkeys</button>
+        </div>
+        <div id="nav-content" style="display: inline-block;">
+            <button id="nav-btn" style="display: inline-block;" onclick="window.location.href='./registry.html'">Settings</button>
+        </div>
+        <div id="nav-content" style="float: right;">
+            <button id="nav-btn" style="display: inline-block;" onclick="toggleHotkeys()">Stop Hotkeys</button>
+        </div>
     </div>
+    <div id="main" class="card"></div>
 </div>
 <script type="module">
     import {WindowManager} from "/bindings/nancy";
-    import { Events } from "@wailsio/runtime";
-    let lastRefresh = 0;
+    let activeWindows = null;
+    let activeHotkeys = null;
+    const mainDiv = document.getElementById('main');
 
     window.onload = async () => { // Refresh windows on focus or hover
         try {
             await setActiveWindows();
-            const hoverTarget = document.getElementById('container') ?? document.body;
-            hoverTarget.addEventListener('pointerenter', async () => {
+            document.body.addEventListener('pointerenter', async () => {
                 console.log("Hover event triggered");
                 await setActiveWindows();
             }, { passive: true });
@@ -30,10 +40,6 @@
             document.getElementById('main').innerHTML = `<div class="result">Unable to retrieve active windows</div>`;
         }
     }
-    Events.On('common:WindowFocus', async () => {
-        console.log("Window focus event triggered");
-        await setActiveWindows();
-    });
     window.toggleBorderlessFullscreen = async (button) => {
         try {
             const currentState = button.parentElement.getAttribute('current-state');
@@ -67,7 +73,9 @@
             button.innerText = 'Error';
         }
     }
-
+    window.toggleHotkeys = async () => {
+        await WindowManager.ToggleHotkeys();
+    }
     window.toggleFocus = async (button) => {
         try {
             const handle = button.parentElement.getAttribute('handle');
@@ -77,33 +85,57 @@
         }
     }
     document.addEventListener('keyup', async (e) => {
-        if (e.key === 'Enter' && e.target.placeholder === 'Set Hotkey') {
+        if (e.key === 'Enter' && e.target.placeholder === 'Key') {
             console.log("Triggered enter key event on hotkey input")
-            await WindowManager.SetHotkey(parseInt(e.target.getAttribute('handle')), e.target.value);
+            const hndle = e.target.id.split('-')[1];
+            await setHotkey(document.getElementById(hndle).getAttribute('executable'), document.getElementById('modifier-' + hndle).value, e.target.value);
         }
     });
     document.addEventListener('focusout', async (e) => {
         if (e.target.placeholder === 'Key') {
-            console.log("Triggered blur event on hotkey input")
-            await WindowManager.SetHotkey(e.target.getAttribute('current-executable'), e.target.getAttribute('current-mod'), e.target.value);
+            console.log("Triggered focusout event on hotkey input")
+            const hndle = e.target.id.split('-')[1];
+            await setHotkey(document.getElementById(hndle).getAttribute('executable'), document.getElementById('modifier-' + hndle).value, e.target.value);
         }
     });
-    async function changeHotkey(select) {
+    window.changeHotkey = async (select) => {
         console.log("Triggered change event on modifier select")
-        await WindowManager.SetHotkey(select.getAttribute('current-executable'), select.value, select.getAttribute('current-hotkey'));
+        if (select.value === "None") {
+            await removeHotkey(select.getAttribute('current-executable'));
+        }
+        const hndle = select.id.split('-')[1];
+        await setHotkey(document.getElementById(hndle).getAttribute('executable'), select.value, document.getElementById('key-' + hndle).value);
     }
 
-    async function setActiveWindows() { // This will actually trigger 3x on the event unfortunately
-        if (Date.now() - lastRefresh < 1000) {
+    async function setHotkey(execpath, modifier, key) {
+        if (execpath === null || execpath === '') {
+            console.log("No executable path provided");
             return;
         }
-        console.log("Refreshing active windows...");
-        lastRefresh = Date.now();
-        const activeWindows = await WindowManager.GetAllActiveWindows();
-        const activeHotkeys = await WindowManager.GetAllHotkeys();
-        const mainDiv = document.getElementById('main');
+        if (modifier === null || modifier === '') {
+            console.log("No modifier provided");
+            return;
+        }
+        if (key === null || key === '') {
+            console.log("No key provided");
+            return;
+        }
+
         
-        if (activeWindows.length === 0) {
+        await WindowManager.SetHotkey(execpath, modifier, key);
+    }
+    async function removeHotkey(execpath) {
+        if (execpath === null || execpath === '') {
+            console.log("No executable path provided");
+            return;
+        }
+        await WindowManager.RemoveHotkey(execpath);
+    }
+    async function setActiveWindows() {
+        activeWindows = await WindowManager.GetAllActiveWindows();
+        activeHotkeys = await WindowManager.GetAllHotkeys();
+        
+        if (activeWindows === null || activeWindows.length === 0) {
             mainDiv.innerHTML = `<div class="result">No active windows found</div>`;
         } else {
             mainDiv.innerHTML = '';
@@ -121,12 +153,13 @@
                 if (activeHotkeys[window.Executable] === undefined) {
                     activeHotkeys[window.Executable] = ['', ''];
                 }
+                const windowHandle = window.Handle.toString();
 
                 windowItem.innerHTML = `
-                    <div class="window-title" title="${window.Title}">${window.Title}</div>
-                    <div class="window-controls" current-state="${window.WindowState}" handle=${window.Handle.toString()}>
+                    <div id="${windowHandle}" executable="${window.Executable}" class="window-title" title="${window.Title}">${window.Title}</div>
+                    <div class="window-controls" current-state="${window.WindowState}" handle=${windowHandle}>
                         <div class="hotkey-group">
-                            <select class="modifier-select" handle=${window.Handle.toString()} onchange="changeHotkey(this)">
+                            <select id="modifier-${windowHandle}" class="modifier-select" onchange="changeHotkey(this)">
                                 <option value="" selected>None</option>
                                 <option value="ctrl">Ctrl</option>
                                 <option value="alt">Alt</option>
@@ -136,10 +169,10 @@
                                 <option value="alt+shift">Alt+Shift</option>
                             </select>
                             <span class="hotkey-separator">+</span>
-                            <input type="text" class="hotkey-letter" placeholder="Key" maxlength="1" handle=${window.Handle.toString()} current-mod="${activeHotkeys[window.Executable][0]}" current-hotkey="${activeHotkeys[window.Executable][1]}">
+                            <input type="text" id="key-${windowHandle}" class="hotkey-letter" placeholder="Key" maxlength="1">
                         </div>
-                        <button class="borderless-btn ${classActive}" onclick="toggleBorderlessFullscreen(this)" handle=${window.Handle.toString()}>${buttonText}</button>
-                        <button class="focus-btn" onclick="toggleFocus(this)" handle=${window.Handle.toString()}>Focus</button>
+                        <button class="borderless-btn ${classActive}" onclick="toggleBorderlessFullscreen(this)" handle=${windowHandle}>${buttonText}</button>
+                        <button class="focus-btn" onclick="toggleFocus(this)" handle=${windowHandle}>Focus</button>
                     </div>
                 `;                    
                 mainDiv.appendChild(windowItem);
@@ -147,5 +180,6 @@
         }
         console.log("Finished retrieving active windows");
     }
-        
 </script>
+</body>
+</html>
