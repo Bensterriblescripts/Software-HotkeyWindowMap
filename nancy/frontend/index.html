@@ -11,13 +11,13 @@
 <div id="container">
     <div id="nav" style="display: inline-block; margin-left: 2%; width: 100%;">
         <div id="nav-content" style="display: inline-block;">
-            <button id="nav-btn" style="display: inline-block;" onclick="window.location.href='./hotkeys.html'">Hotkeys</button>
+            <button id="nav-btn-hotkeys" style="display: inline-block;" onclick="window.location.href='./hotkeys.html'">Hotkeys</button>
         </div>
         <div id="nav-content" style="display: inline-block;">
-            <button id="nav-btn" style="display: inline-block;" onclick="window.location.href='./registry.html'">Settings</button>
+            <button id="nav-btn-reg" style="display: inline-block;" onclick="window.location.href='./registry.html'">Settings</button>
         </div>
         <div id="nav-content" style="float: right;">
-            <button id="nav-btn" style="display: inline-block;" onclick="toggleHotkeys()">Stop Hotkeys</button>
+            <button id="nav-btn-hotkeytoggle" style="display: inline-block;" onclick="toggleHotkeys()">Stop Hotkeys</button>
         </div>
     </div>
     <div id="main" class="card"></div>
@@ -27,6 +27,7 @@
     let activeWindows = null;
     let activeHotkeys = null;
     const mainDiv = document.getElementById('main');
+    const hotkeyToggle = document.getElementById('nav-btn-hotkeytoggle');
 
     window.onload = async () => { // Refresh windows on focus or hover
         try {
@@ -134,6 +135,18 @@
     async function setActiveWindows() {
         activeWindows = await WindowManager.GetAllActiveWindows();
         activeHotkeys = await WindowManager.GetAllHotkeys();
+
+        if (activeHotkeys === null || Object.keys(activeHotkeys).length === 0) {
+            hotkeyToggle.innerText = 'No Hotkeys Set';
+            hotkeyToggle.disabled = true;
+            console.log("No hotkeys set");
+        } else {
+            hotkeyToggle.innerText = 'Start Hotkeys';
+            console.log("Hotkeys set");
+            for (const hotkey in activeHotkeys) {
+                console.log(hotkey);
+            }
+        }
         
         if (activeWindows === null || activeWindows.length === 0) {
             mainDiv.innerHTML = `<div class="result">No active windows found</div>`;

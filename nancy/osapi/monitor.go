@@ -8,7 +8,7 @@ import (
 	proc "github.com/shirou/gopsutil/v4/process"
 )
 
-func PrintProcUsage() {
+func CurrentProcessUsage() {
 	p, err := proc.NewProcess(int32(os.Getpid()))
 	if err != nil {
 		ErrorLog(fmt.Sprintf("Failed to get process: %v", err))

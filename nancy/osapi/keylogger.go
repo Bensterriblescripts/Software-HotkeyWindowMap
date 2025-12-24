@@ -3,6 +3,7 @@ package osapi
 import (
 	"runtime"
 	"strconv"
+	"strings"
 
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
 )
@@ -12,9 +13,11 @@ var Hotkeys []Hotkey
 var currentHotkeyID int32 = 0
 
 type Hotkey struct {
-	ID  uintptr
-	Mod string
-	Key string
+	ID       int32
+	Mod      string
+	Key      string
+	Callback func()
+	Active   bool
 }
 
 var Keys = map[string]uintptr{
@@ -92,24 +95,33 @@ func StartKeylogger() {
 			return
 		}
 
-		for hotkeyIndex, hotkey := range Hotkeys {
-			Hotkeys[hotkeyIndex].ID = uintptr(currentHotkeyID)
-			currentHotkeyID++
+		for _, hotkey := range Hotkeys {
 			if _, ok := Keys[hotkey.Key]; !ok {
 				ErrorLog("Invalid key: " + hotkey.Key)
 				return
 			}
-			if _, ok := Modifiers[hotkey.Mod]; !ok {
-				ErrorLog("Invalid modifier: " + hotkey.Mod)
-				return
+
+			modifiers := uintptr(0)
+			if strings.Contains(hotkey.Mod, "+") {
+				modifiersSplit := strings.Split(hotkey.Mod, "+")
+				for _, mod := range modifiersSplit {
+					if _, ok := Modifiers[mod]; !ok {
+						ErrorLog("Invalid modifier: " + mod)
+						return
+					} else {
+						modifiers = uintptr(modifiers) | Modifiers[mod]
+					}
+				}
+			} else {
+				modifiers = Modifiers[hotkey.Mod]
 			}
 
-			if !registerHotKey(0, Hotkeys[hotkeyIndex].ID, Modifiers[hotkey.Mod], Keys[hotkey.Key]) {
+			if !registerHotKey(0, uintptr(hotkey.ID), modifiers, Keys[hotkey.Key]) {
 				ErrorLog("Failed to register hotkey: " + hotkey.Mod + "+" + hotkey.Key)
 				return
 			}
-			defer unregisterHotKey(0, Hotkeys[hotkeyIndex].ID)
-			TraceLog("Registered hotkey: " + hotkey.Mod + " + " + hotkey.Key + " with ID: " + strconv.Itoa(int(Hotkeys[hotkeyIndex].ID)))
+			defer unregisterHotKey(0, uintptr(hotkey.ID))
+			TraceLog("Registered hotkey: " + hotkey.Mod + " + " + hotkey.Key + " with ID: " + strconv.Itoa(int(hotkey.ID)))
 		}
 
 		for LogKeys {
@@ -122,6 +134,7 @@ func StartKeylogger() {
 				for _, hotkey := range Hotkeys {
 					if msg.WParam == uintptr(hotkey.ID) {
 						TraceLog("Hotkey Pressed: " + hotkey.Mod + " + " + hotkey.Key)
+						hotkey.Callback()
 					}
 				}
 			}
@@ -130,12 +143,52 @@ func StartKeylogger() {
 }
 func StopKeylogger() {
 	for _, hotkey := range Hotkeys {
-		unregisterHotKey(0, hotkey.ID)
+		unregisterHotKey(0, uintptr(hotkey.ID))
 	}
-	LogKeys = false
-	Hotkeys = []Hotkey{}
-	currentHotkeyID = 0
-	TraceLog("Keylogger stopped")
+}
+func AddHotkey(mod string, key string, callback func()) {
+	if strings.Contains(mod, "+") {
+		multimods := strings.Split(mod, "+")
+		for _, mod := range multimods {
+			if _, ok := Modifiers[mod]; !ok {
+				ErrorLog("Invalid modifier: " + mod)
+				return
+			}
+		}
+	} else {
+		if mod == "" {
+			ErrorLog("Modifier is required")
+			return
+		}
+		if _, ok := Modifiers[mod]; !ok {
+			ErrorLog("Invalid modifier: " + mod)
+			return
+		}
+	}
+
+	if key == "" {
+		ErrorLog("Key is required")
+		return
+	}
+	if _, ok := Keys[key]; !ok {
+		ErrorLog("Invalid key: " + key)
+		return
+	}
+
+	if callback == nil {
+		ErrorLog("Callback is required")
+		return
+	}
+
+	hotkey := Hotkey{
+		ID:       currentHotkeyID,
+		Mod:      mod,
+		Key:      key,
+		Callback: callback,
+		Active:   true,
+	}
+	Hotkeys = append(Hotkeys, hotkey)
+	currentHotkeyID++
 }
 
 func registerHotKey(hwnd uintptr, id uintptr, modifiers uintptr, vk uintptr) bool {

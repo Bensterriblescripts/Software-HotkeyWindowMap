@@ -9,105 +9,8 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-var (
-	user32   = windows.NewLazySystemDLL("user32.dll")
-	kernel32 = windows.NewLazySystemDLL("kernel32.dll")
-	version  = windows.NewLazySystemDLL("version.dll")
-
-	procEnumWindows = user32.NewProc("EnumWindows")
-
-	procGetWindowText       = user32.NewProc("GetWindowTextW")
-	procGetWindowTextLength = user32.NewProc("GetWindowTextLengthW")
-	procIsWindowVisible     = user32.NewProc("IsWindowVisible")
-	procFindWindowW         = user32.NewProc("FindWindowW")
-	procGetSystemMetrics    = user32.NewProc("GetSystemMetrics")
-	procGetWindowLongW      = user32.NewProc("GetWindowLongW")
-	procSetWindowLongW      = user32.NewProc("SetWindowLongW")
-	procGetWindowRect       = user32.NewProc("GetWindowRect")
-
-	procMonitorFromWindow = user32.NewProc("MonitorFromWindow")
-	procGetMonitorInfoW   = user32.NewProc("GetMonitorInfoW")
-	procShowWindow        = user32.NewProc("ShowWindow")
-
-	procGetWindowThreadProcessId   = user32.NewProc("GetWindowThreadProcessId")
-	procQueryFullProcessImageNameW = kernel32.NewProc("QueryFullProcessImageNameW")
-
-	procGetFileVersionInfoSizeW = version.NewProc("GetFileVersionInfoSizeW")
-	procGetFileVersionInfoW     = version.NewProc("GetFileVersionInfoW")
-	procVerQueryValueW          = version.NewProc("VerQueryValueW")
-
-	procSetWindowPos = user32.NewProc("SetWindowPos")
-
-	procBringWindowToTop    = user32.NewProc("BringWindowToTop")
-	procSetForegroundWindow = user32.NewProc("SetForegroundWindow")
-	procGetMessageW         = user32.NewProc("GetMessageW")
-
-	procRegisterHotKey   = user32.NewProc("RegisterHotKey")
-	procUnregisterHotKey = user32.NewProc("UnregisterHotKey")
-)
-
-const (
-	SM_CXSCREEN            = 0 // width of primary monitor
-	SM_CYSCREEN            = 1 // height of primary monitor
-	SWP_FRAMECHANGED       = 0x0020
-	SWP_SHOWWINDOW         = 0x0040
-	GWL_STYLE        int32 = -16
-
-	WS_POPUP       = 0x80000000
-	WS_CAPTION     = 0x00C00000
-	WS_THICKFRAME  = 0x00040000
-	WS_MINIMIZEBOX = 0x00020000
-	WS_MAXIMIZEBOX = 0x00010000
-	WS_SYSMENU     = 0x00080000
-
-	MONITOR_DEFAULTTONEAREST = 0x00000002
-	SW_SHOW                  = 5
-	SW_RESTORE               = 9
-	SW_SHOWMAXIMIZED         = 3
-	WS_OVERLAPPEDWINDOW      = WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX | WS_MAXIMIZEBOX | WS_SYSMENU
-)
-
-type Window struct {
-	Title        string
-	FullTitle    string
-	Handle       uintptr
-	Process      uint32
-	Executable   string
-	WindowState  string
-	OriginalRect RECT
-	MonitorInfo  RECT
-}
-type RECT struct {
-	Left   int32
-	Top    int32
-	Right  int32
-	Bottom int32
-}
-type MONITORINFO struct {
-	CbSize    uint32
-	RcMonitor RECT
-	RcWork    RECT
-	DwFlags   uint32
-}
-
-type MSG struct {
-	Hwnd     uintptr
-	Message  uint32
-	WParam   uintptr
-	LParam   uintptr
-	Time     uint32
-	Pt       POINT
-	LPrivate uint32
-}
-
-type POINT struct {
-	X int32
-	Y int32
-}
-
 var activeWindows []Window
 
-/* Get Information and Retrieval */
 func GetWindowByTitle(title string) uintptr {
 	t, err := windows.UTF16PtrFromString(title)
 	if err != nil {
@@ -164,15 +67,7 @@ func GetAllActiveWindows() []Window {
 	TraceLog(fmt.Sprintf("GetAllActiveWindows finished, found %d windows", len(activeWindows)))
 	return activeWindows
 }
-func GetScreenSize() (width, height int32) {
-	w := GetSystemMetrics(SM_CXSCREEN)
-	h := GetSystemMetrics(SM_CYSCREEN)
-	return w, h
-}
-func GetSystemMetrics(index int32) int32 {
-	r, _, _ := procGetSystemMetrics.Call(uintptr(index))
-	return int32(r)
-}
+
 func GetWindowState(hwnd uintptr) string {
 	styleIndex := int32(GWL_STYLE)
 	style, _, _ := procGetWindowLongW.Call(hwnd, uintptr(styleIndex))
@@ -304,6 +199,38 @@ func SetWindowWindowed(hwnd uintptr) {
 	window.WindowState = "Windowed"
 	SetVisible(hwnd)
 }
+func SetWindowMinimised(hwnd uintptr) {
+	if hwnd == 0 {
+		ErrorLog("Passed in an empty pointer, did not minimise window")
+		return
+	}
+
+	var window Window
+	for _, activeWindow := range activeWindows {
+		if activeWindow.Handle == hwnd {
+			window = activeWindow
+			break
+		}
+	}
+	if window.Handle == 0 {
+		TraceLog("Window was not found in active window array, retrieving list...")
+		GetAllActiveWindows()
+		for _, activeWindow := range activeWindows {
+			if activeWindow.Handle == hwnd {
+				window = activeWindow
+				break
+			}
+		}
+		if window.Handle == 0 {
+			ErrorLog("Tried to edit a handle that no longer exists")
+			return
+		}
+	}
+
+	procShowWindow.Call(hwnd, uintptr(SW_MINIMIZE))
+
+	window.WindowState = "Minimised"
+}
 func SetFocus(hwnd uintptr) { // Bring window to front and steal focus from other windows
 	if hwnd == 0 {
 		ErrorLog("SetFocus: window handle is null")
@@ -324,13 +251,4 @@ func SetFocus(hwnd uintptr) { // Bring window to front and steal focus from othe
 }
 func SetVisible(hwnd uintptr) { // Less aggressive than SetFocus, will open if minimised/tray
 	procShowWindow.Call(hwnd, SW_RESTORE)
-}
-func GetMessage(msg *MSG, hwnd uintptr, msgFilterMin uint32, msgFilterMax uint32) int32 {
-	r, _, _ := procGetMessageW.Call(
-		uintptr(unsafe.Pointer(msg)),
-		hwnd,
-		uintptr(msgFilterMin),
-		uintptr(msgFilterMax),
-	)
-	return int32(r)
 }

@@ -59,7 +59,6 @@ func EnumWindowsCallback(hwnd uintptr, _ uintptr) uintptr {
 		}
 	}
 
-	TraceLog(fmt.Sprintf("Found Window: title=%q, executable=%q, window state=%q, dimensions=%d,%d,%d,%d", window.Title, window.Executable, window.WindowState, window.OriginalRect.Left, window.OriginalRect.Top, window.OriginalRect.Right, window.OriginalRect.Bottom))
 	activeWindows = append(activeWindows, window)
 	return 1
 }
@@ -181,7 +180,6 @@ func QueryFileDescription(buf []byte, lang, codepage uint16) (desc string, err e
 	start := uintptr(unsafe.Pointer(&buf[0]))
 	offset := valuePtr - start
 	desc = windows.UTF16PtrToString((*uint16)(unsafe.Pointer(&buf[int(offset)])))
-	TraceLog(fmt.Sprintf("File description (%s): %q", subBlock, desc))
 	return desc, nil
 }
 func GetMonitorByWindow(hwnd uintptr) RECT {
@@ -189,13 +187,8 @@ func GetMonitorByWindow(hwnd uintptr) RECT {
 	if r0 == 0 {
 		ErrorLog("failed to get monitor for window")
 	}
-	monitor := r0
 	var mi MONITORINFO
 	mi.CbSize = uint32(unsafe.Sizeof(MONITORINFO{}))
-	r1, _, _ := procGetMonitorInfoW.Call(monitor, uintptr(unsafe.Pointer(&mi)))
-	if r1 == 0 {
-		ErrorLog("GetMonitorInfoW failed")
-	}
 
 	var rect RECT
 	rect.Left = mi.RcMonitor.Left
