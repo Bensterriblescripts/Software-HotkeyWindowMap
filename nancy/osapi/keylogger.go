@@ -124,6 +124,7 @@ func StartKeylogger() {
 			TraceLog("Registered hotkey: " + hotkey.Mod + " + " + hotkey.Key + " with ID: " + strconv.Itoa(int(hotkey.ID)))
 		}
 
+		LogKeys = true
 		for LogKeys {
 			var msg MSG
 			r := GetMessage(&msg, 0, 0, 0)
@@ -142,6 +143,7 @@ func StartKeylogger() {
 	}()
 }
 func StopKeylogger() {
+	LogKeys = false
 	for _, hotkey := range Hotkeys {
 		unregisterHotKey(0, uintptr(hotkey.ID))
 	}
@@ -189,6 +191,8 @@ func AddHotkey(mod string, key string, callback func()) {
 	}
 	Hotkeys = append(Hotkeys, hotkey)
 	currentHotkeyID++
+
+	TraceLog("Added hotkey: " + mod + " + " + key)
 }
 
 func registerHotKey(hwnd uintptr, id uintptr, modifiers uintptr, vk uintptr) bool {

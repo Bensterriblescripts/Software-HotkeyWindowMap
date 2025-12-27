@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"log"
 	"nancy/osapi"
+	"strings"
 
 	"github.com/Bensterriblescripts/Lib-Handlers/config"
 	. "github.com/Bensterriblescripts/Lib-Handlers/logging"
@@ -19,10 +20,13 @@ func main() {
 	TraceDebug = true
 	ConsoleLogging = true
 	InitLogs()
-	config.ReadConfig()
 
-	osapi.Hotkeys = append(osapi.Hotkeys, osapi.Hotkey{Mod: "alt", Key: "f1"})
-	osapi.Hotkeys = append(osapi.Hotkeys, osapi.Hotkey{Mod: "alt", Key: "f2"})
+	for executable, hotkey := range config.ReadConfig() {
+		hotkeySplit := strings.Split(hotkey, "+")
+		osapi.AddHotkey(hotkeySplit[0], hotkeySplit[1], func() {
+			TraceLog("Hotkey pressed: " + executable + " " + hotkeySplit[0] + " " + hotkeySplit[1])
+		})
+	}
 	go osapi.StartKeylogger()
 
 	app := application.New(application.Options{

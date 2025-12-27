@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"nancy/osapi"
 
 	"github.com/Bensterriblescripts/Lib-Handlers/config"
@@ -74,14 +75,19 @@ func (h *WindowManager) SetHotkey(executable string, kotkeymod string, hotkey st
 	}
 	activeHotkeys[executable] = [2]string{kotkeymod, hotkey}
 
+	osapi.Hotkeys = nil
 	hotkeyConfig = make(map[string]string, len(activeHotkeys)+1)
 	for exe, keys := range activeHotkeys {
 		hotkeyConfig[exe] = keys[0] + "+" + keys[1]
 	}
 	config.WriteSettings(hotkeyConfig)
-	if osapi.LogKeys {
-		osapi.StartKeylogger()
-	}
+
+	osapi.StopKeylogger()
+	osapi.AddHotkey(kotkeymod, hotkey, func() {
+		TraceLog(fmt.Sprintf("Hotkey pressed: %s %s %s", executable, kotkeymod, hotkey))
+	})
+
+	osapi.StartKeylogger()
 }
 func (h *WindowManager) ToggleHotkeys() {
 	if osapi.LogKeys {
