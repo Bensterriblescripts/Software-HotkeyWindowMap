@@ -21,6 +21,12 @@ func (h *WindowManager) GetAllActiveWindows() []osapi.Window {
 			continue
 		}
 		window.WindowState = osapi.GetWindowState(window.Handle)
+		if window.WindowState == "Borderless" {
+			currentRect := osapi.GetWindowRect(window.Handle)
+			if currentRect == window.OriginalRect {
+				window.WindowState = "Borderless (Via Application)"
+			}
+		}
 		activeWindows = append(activeWindows, window)
 	}
 	return activeWindows

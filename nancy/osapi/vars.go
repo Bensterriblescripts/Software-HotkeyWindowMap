@@ -72,7 +72,6 @@ type Window struct {
 	WindowState  string
 	OriginalRect RECT
 	MonitorInfo  RECT
-	CurrentRect  RECT
 }
 type RECT struct {
 	Left   int32

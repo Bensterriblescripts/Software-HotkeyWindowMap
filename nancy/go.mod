@@ -5,7 +5,7 @@ go 1.25.3
 require (
 	github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251224101806-4e281c49adaf
 	github.com/shirou/gopsutil/v4 v4.25.11
-	github.com/wailsapp/wails/v3 v3.0.0-alpha.52
+	github.com/wailsapp/wails/v3 v3.0.0-alpha.53
 	golang.org/x/sys v0.39.0
 )
 

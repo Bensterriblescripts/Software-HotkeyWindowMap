@@ -156,16 +156,23 @@
                 const windowItem = document.createElement('div');
                 windowItem.className = 'window-item';
 
-                let buttonText = 'Set Borderless Fullscreen';
+                let buttonText = 'Error';
                 let classActive = '';
                 if (window.WindowState === 'Borderless' || window.WindowState === 'Fullscreen') {
                     buttonText = 'Set Windowed';
+                    classActive = '';
+                } else if (window.WindowState === 'Windowed') {
+                    buttonText = 'Set Borderless Fullscreen';
+                    classActive = '';
+                } else if (window.WindowState === 'Borderless (Via Application)') {
+                    buttonText = 'Borderless (Via Application)';
                     classActive = 'active';
                 }
 
                 if (activeHotkeys[window.Executable] === undefined) {
                     activeHotkeys[window.Executable] = ['', ''];
                 }
+
                 const windowHandle = window.Handle.toString();
 
                 windowItem.innerHTML = `
