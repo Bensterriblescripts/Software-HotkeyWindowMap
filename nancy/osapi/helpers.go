@@ -186,16 +186,18 @@ func GetMonitorByWindow(hwnd uintptr) RECT {
 	r0, _, _ := procMonitorFromWindow.Call(hwnd, uintptr(MONITOR_DEFAULTTONEAREST))
 	if r0 == 0 {
 		ErrorLog("failed to get monitor for window")
+		return RECT{}
 	}
 	var mi MONITORINFO
 	mi.CbSize = uint32(unsafe.Sizeof(MONITORINFO{}))
 
-	var rect RECT
-	rect.Left = mi.RcMonitor.Left
-	rect.Top = mi.RcMonitor.Top
-	rect.Right = mi.RcMonitor.Right
-	rect.Bottom = mi.RcMonitor.Bottom
-	return rect
+	ret, _, _ := procGetMonitorInfoW.Call(r0, uintptr(unsafe.Pointer(&mi)))
+	if ret == 0 {
+		ErrorLog("GetMonitorInfoW failed")
+		return RECT{}
+	}
+
+	return mi.RcMonitor
 }
 func SetWindowPos(hwnd uintptr, hwndInsertAfter uintptr, x, y, cx, cy int32, flags uint32) bool {
 	r, _, _ := procSetWindowPos.Call(

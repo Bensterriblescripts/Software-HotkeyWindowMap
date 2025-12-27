@@ -1,7 +1,7 @@
 dario.cat/mergo v1.0.2 h1:85+piFYR1tMbRrLcDwR18y4UKJ3aH1Tbzi24VRW1TK8=
 dario.cat/mergo v1.0.2/go.mod h1:E/hbnu0NxMFBjpMIE34DRGLWqDy0g5FuKDhCb31ngxA=
-github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251222220938-cc450eabfe46 h1:t71bbWkkvaUpxCjswVnzVXL6bJ0kvfvV9hEpCR2+5fE=
-github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251222220938-cc450eabfe46/go.mod h1:jqbcCBLxgvwC5Fnb6nH7hCVvqr6Dx1fsWWt7Uit29Xk=
+github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251224101806-4e281c49adaf h1:gbfRaPy7dqcVKo1UbDfE1ExsUjheNHFiM/U+Q10ArkM=
+github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20251224101806-4e281c49adaf/go.mod h1:jqbcCBLxgvwC5Fnb6nH7hCVvqr6Dx1fsWWt7Uit29Xk=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
 github.com/Microsoft/go-winio v0.6.2 h1:F2VQgta7ecxGYO8k3ZZz3RS8fVIXVxONVUPlNERoyfY=
 github.com/Microsoft/go-winio v0.6.2/go.mod h1:yd8OoFMLzJbo9gZq8j5qaps8bJ9aShtEA8Ipt1oGCvU=
@@ -118,8 +118,8 @@ github.com/wailsapp/go-webview2 v1.0.23 h1:jmv8qhz1lHibCc79bMM/a/FqOnnzOGEisLav+
 github.com/wailsapp/go-webview2 v1.0.23/go.mod h1:qJmWAmAmaniuKGZPWwne+uor3AHMB5PFhqiK0Bbj8kc=
 github.com/wailsapp/mimetype v1.4.1 h1:pQN9ycO7uo4vsUUuPeHEYoUkLVkaRntMnHJxVwYhwHs=
 github.com/wailsapp/mimetype v1.4.1/go.mod h1:9aV5k31bBOv5z6u+QP8TltzvNGJPmNJD4XlAL3U+j3o=
-github.com/wailsapp/wails/v3 v3.0.0-alpha.51 h1:n8KT0H4lvtWld9tMIiHVX4nrR0wEMT2zy5hM/R6luMU=
-github.com/wailsapp/wails/v3 v3.0.0-alpha.51/go.mod h1:yaz8baG0+YzoiN8J6osn0wKiEi0iUux0ZU5NsZFu6OQ=
+github.com/wailsapp/wails/v3 v3.0.0-alpha.52 h1:ZiUoBJtL6AedLKz1aE0o5Cz8c55pxVgpGEP9g2bUJ48=
+github.com/wailsapp/wails/v3 v3.0.0-alpha.52/go.mod h1:yaz8baG0+YzoiN8J6osn0wKiEi0iUux0ZU5NsZFu6OQ=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
 github.com/xanzy/ssh-agent v0.3.3/go.mod h1:6dzNDKs0J9rVPHPhaGCukekBHKqfl+L3KghI1Bc68Uw=
 github.com/yusufpapurcu/wmi v1.2.4 h1:zFUKzehAFReQwLys1b/iSMl+JQGSCSjtVqQn9bBrPo0=

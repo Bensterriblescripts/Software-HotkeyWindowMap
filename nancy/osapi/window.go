@@ -91,23 +91,23 @@ func GetWindowRect(hwnd uintptr) RECT {
 
 /* Alter Window State and Focus */
 func SetBorderlessWindow(hwnd uintptr) {
-	var window Window
-	for _, activeWindow := range activeWindows {
+	var window *Window
+	for activeWindowIndex, activeWindow := range activeWindows {
 		if activeWindow.Handle == hwnd {
-			window = activeWindow
+			window = &activeWindows[activeWindowIndex]
 			break
 		}
 	}
-	if window.Handle == 0 {
+	if window == nil {
 		TraceLog("Window not found, refreshing active windows...")
 		GetAllActiveWindows()
-		for _, activeWindow := range activeWindows {
+		for activeWindowIndex, activeWindow := range activeWindows {
 			if activeWindow.Handle == hwnd {
-				window = activeWindow
+				window = &activeWindows[activeWindowIndex]
 				break
 			}
 		}
-		if window.Handle == 0 {
+		if window == nil {
 			ErrorLog("Tried to edit a handle that no longer exists")
 			return
 		}
@@ -155,23 +155,23 @@ func SetBorderlessWindow(hwnd uintptr) {
 	SetVisible(hwnd)
 }
 func SetWindowWindowed(hwnd uintptr) {
-	var window Window
-	for _, activeWindow := range activeWindows {
+	var window *Window
+	for activeWindowIndex, activeWindow := range activeWindows {
 		if activeWindow.Handle == hwnd {
-			window = activeWindow
+			window = &activeWindows[activeWindowIndex]
 			break
 		}
 	}
-	if window.Handle == 0 {
+	if window == nil {
 		TraceLog("Window not found, refreshing active windows...")
 		GetAllActiveWindows()
-		for _, activeWindow := range activeWindows {
+		for activeWindowIndex, activeWindow := range activeWindows {
 			if activeWindow.Handle == hwnd {
-				window = activeWindow
+				window = &activeWindows[activeWindowIndex]
 				break
 			}
 		}
-		if window.Handle == 0 {
+		if window == nil {
 			ErrorLog("Tried to edit a handle that no longer exists")
 			return
 		}

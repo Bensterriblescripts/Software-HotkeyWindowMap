@@ -17,6 +17,9 @@ func (h *WindowManager) GetAllActiveWindows() []osapi.Window {
 	activeWindows = []osapi.Window{}
 	allWindows := osapi.GetAllActiveWindows()
 	for _, window := range allWindows {
+		if window.Title == "Windows Explorer" || window.Title == "Settings" || window.Title == "Application Frame Host" || window.Title == "Windows Input Experience" {
+			continue
+		}
 		window.WindowState = osapi.GetWindowState(window.Handle)
 		activeWindows = append(activeWindows, window)
 	}
