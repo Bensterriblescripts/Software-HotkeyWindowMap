@@ -32,10 +32,10 @@
     window.onload = async () => { // Refresh windows on focus or hover
         try {
             await setActiveWindows();
-            document.body.addEventListener('pointerenter', async () => {
-                console.log("Hover event triggered");
-                await setActiveWindows();
-            }, { passive: true });
+            // document.body.addEventListener('pointerenter', async () => {
+            //     console.log("Hover event triggered");
+            //     await setActiveWindows();
+            // }, { passive: true });
         } catch (err) {
             console.error(err);
             document.getElementById('main').innerHTML = `<div class="result">Unable to retrieve active windows</div>`;
