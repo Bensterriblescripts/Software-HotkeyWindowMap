@@ -1,0 +1,1 @@
+C:\Repositories\Software-HotkeyWindowMap\hotkeynancy\target\debug\hotkeynancy.exe: C:\Repositories\Software-HotkeyWindowMap\hotkeynancy\src\handles.rs C:\Repositories\Software-HotkeyWindowMap\hotkeynancy\src\main.rs
