@@ -3,7 +3,7 @@ module hotkeynancy
 go 1.25.6
 
 require (
-	github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20260208113001-4caddcbf71d0
+	github.com/Bensterriblescripts/Lib-Handlers v0.0.0-20260208120139-2137d1ba315d
 	github.com/wailsapp/wails/v3 v3.0.0-alpha.69
 )
 
