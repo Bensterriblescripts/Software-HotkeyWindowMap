@@ -46,12 +46,12 @@ export function SetFocus(handle) {
 
 /**
  * @param {string} executable
- * @param {string} kotkeymod
+ * @param {string} hotkeymod
  * @param {string} hotkey
  * @returns {$CancellablePromise<void>}
  */
-export function SetHotkey(executable, kotkeymod, hotkey) {
-    return $Call.ByID(3240562487, executable, kotkeymod, hotkey);
+export function SetHotkey(executable, hotkeymod, hotkey) {
+    return $Call.ByID(3240562487, executable, hotkeymod, hotkey);
 }
 
 /**

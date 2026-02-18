@@ -12,10 +12,9 @@ type HotkeyService struct{}
 
 var activeWindows []osapi.Window
 var activeHotkeys map[string][2]string
-var hotkeyConfig map[string]string
 
 func (h *HotkeyService) GetAllActiveWindows() []osapi.Window {
-	activeWindows = []osapi.Window{}
+	activeWindows = activeWindows[:0]
 	allWindows := osapi.GetAllActiveWindows()
 	for _, window := range allWindows {
 		if window.Title == "Windows Explorer" || window.Title == "Settings" || window.Title == "Application Frame Host" || window.Title == "Windows Input Experience" {
@@ -36,13 +35,17 @@ func (h *HotkeyService) GetAllActiveWindows() []osapi.Window {
 func (h *HotkeyService) SetBorderlessFullscreen(handle int) {
 	for index, window := range activeWindows {
 		if window.Handle == uintptr(handle) {
-			if window.WindowState == "Borderless" {
+			switch window.WindowState {
+			case "Borderless":
 				TraceLog("Window is already borderless")
 				return
-			} else {
+			case "Borderless (Via Application)":
+				TraceLog("Window borderless is managed by the application, skipping")
+				return
+			default:
 				activeWindows[index].WindowState = "Borderless"
-				break
 			}
+			break
 		}
 	}
 	osapi.SetBorderlessWindow(uintptr(handle))
@@ -50,13 +53,17 @@ func (h *HotkeyService) SetBorderlessFullscreen(handle int) {
 func (h *HotkeyService) SetWindowed(handle int) {
 	for index, window := range activeWindows {
 		if window.Handle == uintptr(handle) {
-			if window.WindowState == "Windowed" {
+			switch window.WindowState {
+			case "Windowed":
 				TraceLog("Window is already windowed")
 				return
-			} else {
+			case "Borderless (Via Application)":
+				TraceLog("Window borderless is managed by the application, skipping")
+				return
+			default:
 				activeWindows[index].WindowState = "Windowed"
-				break
 			}
+			break
 		}
 	}
 	osapi.SetWindowWindowed(uintptr(handle))
@@ -66,26 +73,52 @@ func (h *HotkeyService) SetFocus(handle int) {
 }
 
 func (h *HotkeyService) GetAllHotkeys() map[string][2]string {
-	activeHotkeys = make(map[string][2]string)
-	return activeHotkeys
-}
-func (h *HotkeyService) SetHotkey(executable string, kotkeymod string, hotkey string) {
-	if activeHotkeys[executable] == [2]string{} {
+	if activeHotkeys == nil {
 		activeHotkeys = make(map[string][2]string)
 	}
-	activeHotkeys[executable] = [2]string{kotkeymod, hotkey}
+	return activeHotkeys
+}
+func (h *HotkeyService) SetHotkey(executable string, hotkeymod string, hotkey string) {
+	if activeHotkeys == nil {
+		activeHotkeys = make(map[string][2]string)
+	}
+
+	if hotkeymod == "" || hotkey == "" {
+		delete(activeHotkeys, executable)
+	} else {
+		if len(hotkey) > 1 {
+			TraceLog("Invalid hotkey: key must be a single character")
+			return
+		}
+
+		for exe, keys := range activeHotkeys {
+			if exe != executable && keys[0] == hotkeymod && keys[1] == hotkey {
+				TraceLog(fmt.Sprintf("Duplicate hotkey %s+%s: removing from %s", hotkeymod, hotkey, exe))
+				delete(activeHotkeys, exe)
+				break
+			}
+		}
+
+		activeHotkeys[executable] = [2]string{hotkeymod, hotkey}
+	}
 
 	osapi.Hotkeys = nil
-	hotkeyConfig = make(map[string]string, len(activeHotkeys)+1)
+	hotkeyConfig := make(map[string]string, len(activeHotkeys))
 	for exe, keys := range activeHotkeys {
 		hotkeyConfig[exe] = keys[0] + "+" + keys[1]
 	}
 	config.WriteSettings(hotkeyConfig)
 
 	osapi.StopKeylogger()
-	osapi.AddHotkey(kotkeymod, hotkey, func() {
-		TraceLog(fmt.Sprintf("Hotkey pressed: %s %s %s", executable, kotkeymod, hotkey))
-	})
+	if len(activeHotkeys) == 0 {
+		return
+	}
+	for exe, keys := range activeHotkeys {
+		exe, keys := exe, keys
+		osapi.AddHotkey(keys[0], keys[1], func() {
+			TraceLog(fmt.Sprintf("Hotkey pressed: %s %s %s", exe, keys[0], keys[1]))
+		})
+	}
 
 	osapi.StartKeylogger()
 }

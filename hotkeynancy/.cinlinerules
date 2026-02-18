@@ -1,0 +1,49 @@
+# .clinerules
+
+## Go Error Handling Standards
+
+### Required Pattern
+
+All error-returning functions must use inline error checking with inverted logic. The error case must be handled first, and the success case used in the else block where it makes sense.
+
+**Incorrect Pattern (Do Not Use):**
+```go
+result, err := someFunction()
+if err != nil {
+    return false
+}
+// use result
+```
+
+**Correct Pattern (Always Use):**
+```go
+if result, errExists := someFunction(); errExists {
+    ErrorLog("Failed during someFunction. Specific context about what was attempted")
+} else {
+    // use result
+}
+```
+
+### Error Logging Requirements
+
+Every error must be logged with ErrorLog() using unique, descriptive text that includes:
+- What operation failed
+- Relevant context (file names, IDs, parameters)
+- What was being attempted at the time
+
+**Example with context:**
+```go
+if data, errExists := loadConfig(configPath); errExists {
+    ErrorLog("Failed to load configuration from " + configPath + " during initialization")
+} else {
+    // use data
+}
+```
+
+### Variable Naming
+
+Use `errExists` as the error variable name consistently across the codebase, not `err` or other variations.
+
+### No Early Returns on Error
+
+Avoid returning immediately on error without proper logging. Every error path must call ErrorLog() with unique identification before any return statement.

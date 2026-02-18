@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	_ "embed"
 	"strings"
 
 	"github.com/Bensterriblescripts/Lib-Handlers/config"
@@ -23,8 +22,15 @@ func main() {
 	ConsoleLogging = true
 	InitLogs()
 
+	activeHotkeys = make(map[string][2]string)
 	for executable, hotkey := range config.ReadConfig() {
+		executable, hotkey := executable, hotkey
 		hotkeySplit := strings.Split(hotkey, "+")
+		if len(hotkeySplit) < 2 {
+			TraceLog("Invalid hotkey format for " + executable + ": " + hotkey)
+			continue
+		}
+		activeHotkeys[executable] = [2]string{hotkeySplit[0], hotkeySplit[1]}
 		osapi.AddHotkey(hotkeySplit[0], hotkeySplit[1], func() {
 			TraceLog("Hotkey pressed: " + executable + " " + hotkeySplit[0] + " " + hotkeySplit[1])
 		})

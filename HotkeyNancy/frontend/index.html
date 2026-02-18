@@ -5,20 +5,21 @@
     <link rel="icon" type="image/svg+xml" href="/wails.png"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="stylesheet" href="/style.css"/>
-    <title>Wails App</title>
+    <title>Hotkey Nancy</title>
 </head>
 <body>
 <div id="container">
-    <div id="nav" style="display: inline-block; margin-left: 2%; width: 100%;">
-        <div id="nav-content" style="display: inline-block;">
-            <button id="nav-btn-hotkeys" style="display: inline-block;" onclick="window.location.href='./hotkeys.html'">Hotkeys</button>
+    <nav id="navbar">
+        <div class="navbar-links">
+            <a class="nav-link active" data-page="hotkeys">Hotkeys</a>
+            <a class="nav-link" data-page="repositories">Repositories</a>
+            <a class="nav-link" data-page="storage">Storage</a>
+            <a class="nav-link" data-page="config">Config</a>
+            <a class="nav-link" data-page="logs">Logs</a>
         </div>
-        <div id="nav-content" style="display: inline-block;">
-            <button id="nav-btn-reg" style="display: inline-block;" onclick="window.location.href='./registry.html'">Settings</button>
-        </div>
-        <div id="nav-content" style="float: right;">
-            <button id="nav-btn-hotkeytoggle" style="display: inline-block;" onclick="toggleHotkeys()">Stop Hotkeys</button>
-        </div>
+    </nav>
+    <div id="page-actions">
+        <button id="nav-btn-refresh" class="icon-btn" onclick="refreshWindows()" title="Refresh">&#x21bb;</button>
     </div>
     <div id="main" class="card"></div>
 </div>
@@ -26,8 +27,23 @@
     import {HotkeyService} from "/bindings/hotkeynancy";
     let activeWindows = null;
     let activeHotkeys = null;
+    const lastSetHotkey = {};
     const mainDiv = document.getElementById('main');
-    const hotkeyToggle = document.getElementById('nav-btn-hotkeytoggle');
+
+    document.addEventListener('click', (e) => {
+        if (!e.target.classList.contains('nav-link')) return;
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+        e.target.classList.add('active');
+        const page = e.target.getAttribute('data-page');
+        const refreshBtn = document.getElementById('nav-btn-refresh');
+        if (page === 'hotkeys') {
+            refreshBtn.style.display = '';
+            setActiveWindows();
+        } else {
+            refreshBtn.style.display = 'none';
+            mainDiv.innerHTML = '<div class="result">Coming soon</div>';
+        }
+    });
 
     window.onload = async () => { // Refresh windows on focus or hover
         try {
@@ -42,24 +58,19 @@
             const currentState = button.parentElement.getAttribute('current-state');
             const handle = button.parentElement.getAttribute('handle');
             console.log('Current state: ' + currentState);
-            if (currentState === 'Borderless') {
-                if (button.innerText === 'Set Borderless Fullscreen') {
-                    console.log("Already set to borderless...");
-                    return;
-                }
+            if (currentState === 'Borderless (Via Application)') {
+                console.log("Window borderless is managed by the application, skipping");
+                return;
+            } else if (currentState === 'Borderless' || currentState === 'Fullscreen') {
                 console.log('Setting: Windowed');
                 await HotkeyService.SetWindowed(parseInt(handle));
-                button.innerText = 'Set Borderless Fullscreen';
-                button.parentElement.setAttribute('current-state', 'Windowed');  
+                button.innerText = 'Borderless';
+                button.parentElement.setAttribute('current-state', 'Windowed');
                 button.classList.remove('active');
             } else if (currentState === 'Windowed') {
-                if (button.innerText === 'Set Windowed') {
-                    console.log("Already set to windowed...");
-                    return;
-                }
                 console.log('Setting: Borderless');
                 await HotkeyService.SetBorderlessFullscreen(parseInt(handle));
-                button.innerText = 'Set Windowed';
+                button.innerText = 'Windowed';
                 button.parentElement.setAttribute('current-state', 'Borderless');
                 button.classList.add('active');
             } else {
@@ -70,15 +81,32 @@
             button.innerText = 'Error';
         }
     }
-    window.toggleHotkeys = async () => {
-        await HotkeyService.ToggleHotkeys();
-    }
-    window.toggleFocus = async (button) => {
+    window.refreshWindows = async () => {
         try {
-            const handle = button.parentElement.getAttribute('handle');
+            await setActiveWindows();
+        } catch (err) {
+            console.error(err);
+            mainDiv.innerHTML = `<div class="result">Unable to retrieve active windows</div>`;
+        }
+    }
+    window.toggleFocus = async (element) => {
+        try {
+            const handle = element.id;
             await HotkeyService.SetFocus(parseInt(handle));
         } catch (err) {
             alert(`Error: ${err}`);
+        }
+    }
+    window.toggleHotkeyPanel = (button) => {
+        const hotkeyGroup = button.nextElementSibling;
+        const isOpen = hotkeyGroup.classList.toggle('visible');
+        if (isOpen) {
+            button.dataset.originalText = button.innerText;
+            button.innerText = '\u2715';
+            button.classList.add('hotkey-close');
+        } else {
+            button.innerText = button.dataset.originalText || 'Hotkey';
+            button.classList.remove('hotkey-close');
         }
     }
     document.addEventListener('keyup', async (e) => {
@@ -97,11 +125,13 @@
     });
     window.changeHotkey = async (select) => {
         console.log("Triggered change event on modifier select")
-        if (select.value === "None") {
-            await removeHotkey(select.getAttribute('current-executable'));
-        }
         const hndle = select.id.split('-')[1];
-        await setHotkey(document.getElementById(hndle).getAttribute('executable'), select.value, document.getElementById('key-' + hndle).value);
+        const executable = document.getElementById(hndle).getAttribute('executable');
+        if (select.value === "") {
+            await HotkeyService.SetHotkey(executable, "", "");
+            return;
+        }
+        await setHotkey(executable, select.value, document.getElementById('key-' + hndle).value);
     }
 
     async function setHotkey(execpath, modifier, key) {
@@ -117,32 +147,21 @@
             console.log("No key provided");
             return;
         }
+        key = key.charAt(0);
 
-        
-        await HotkeyService.SetHotkey(execpath, modifier, key);
-    }
-    async function removeHotkey(execpath) {
-        if (execpath === null || execpath === '') {
-            console.log("No executable path provided");
+        const dedupeKey = execpath + '|' + modifier + '|' + key;
+        if (lastSetHotkey[execpath] === dedupeKey) {
+            console.log("Hotkey unchanged, skipping duplicate call");
             return;
         }
-        await HotkeyService.RemoveHotkey(execpath);
+        lastSetHotkey[execpath] = dedupeKey;
+
+        await HotkeyService.SetHotkey(execpath, modifier, key);
     }
     async function setActiveWindows() {
         activeWindows = await HotkeyService.GetAllActiveWindows();
         activeHotkeys = await HotkeyService.GetAllHotkeys();
 
-        if (activeHotkeys === null || Object.keys(activeHotkeys).length === 0) {
-            hotkeyToggle.innerText = 'No Hotkeys Set';
-            hotkeyToggle.disabled = true;
-            console.log("No hotkeys set");
-        } else {
-            hotkeyToggle.innerText = 'Start Hotkeys';
-            console.log("Hotkeys set");
-            for (const hotkey in activeHotkeys) {
-                console.log(hotkey);
-            }
-        }
         
         if (activeWindows === null || activeWindows.length === 0) {
             mainDiv.innerHTML = `<div class="result">No active windows found</div>`;
@@ -155,13 +174,13 @@
                 let buttonText = 'Error';
                 let classActive = '';
                 if (window.WindowState === 'Borderless' || window.WindowState === 'Fullscreen') {
-                    buttonText = 'Set Windowed';
+                    buttonText = 'Windowed';
                     classActive = '';
                 } else if (window.WindowState === 'Windowed') {
-                    buttonText = 'Set Borderless Fullscreen';
+                    buttonText = 'Borderless';
                     classActive = '';
                 } else if (window.WindowState === 'Borderless (Via Application)') {
-                    buttonText = 'Borderless (Via Application)';
+                    buttonText = 'App Managed';
                     classActive = 'active';
                 }
 
@@ -170,10 +189,12 @@
                 }
 
                 const windowHandle = window.Handle.toString();
+                const hasHotkey = activeHotkeys[window.Executable] && activeHotkeys[window.Executable][0] !== '' ? ' has-hotkey' : '';
 
                 windowItem.innerHTML = `
-                    <div id="${windowHandle}" executable="${window.Executable}" class="window-title" title="${window.Title}">${window.Title}</div>
-                    <div class="window-controls" current-state="${window.WindowState}" handle=${windowHandle}>
+                    <div id="${windowHandle}" executable="${window.Executable}" class="window-title" onclick="toggleFocus(this)" title="${window.Title}">${window.Title}</div>
+                    <div class="window-controls" current-state="${window.WindowState}" handle="${windowHandle}">
+                        <button class="hotkey-toggle-btn${hasHotkey}" onclick="toggleHotkeyPanel(this)" title="Set Hotkey">Hotkey</button>
                         <div class="hotkey-group">
                             <select id="modifier-${windowHandle}" class="modifier-select" onchange="changeHotkey(this)">
                                 <option value="" selected>None</option>
@@ -187,11 +208,16 @@
                             <span class="hotkey-separator">+</span>
                             <input type="text" id="key-${windowHandle}" class="hotkey-letter" placeholder="Key" maxlength="1">
                         </div>
-                        <button class="borderless-btn ${classActive}" onclick="toggleBorderlessFullscreen(this)" handle=${windowHandle}>${buttonText}</button>
-                        <button class="focus-btn" onclick="toggleFocus(this)" handle=${windowHandle}>Focus</button>
+                        <button class="borderless-btn ${classActive}" onclick="toggleBorderlessFullscreen(this)" handle="${windowHandle}" ${window.WindowState === 'Borderless (Via Application)' ? 'disabled' : ''}>${buttonText}</button>
                     </div>
-                `;                    
+                `;
                 mainDiv.appendChild(windowItem);
+
+                const hotkeyData = activeHotkeys[window.Executable];
+                if (hotkeyData && hotkeyData[0] !== '') {
+                    document.getElementById('modifier-' + windowHandle).value = hotkeyData[0];
+                    document.getElementById('key-' + windowHandle).value = hotkeyData[1];
+                }
             }
         }
         console.log("Finished retrieving active windows");
